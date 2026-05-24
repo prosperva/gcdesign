@@ -1,0 +1,22 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+/* Rich text editor table selection highlight */
+[contenteditable] table[data-selected] {
+  outline: 2px solid #1a4d8f;
+  outline-offset: 1px;
+  background-color: #f0f5fb;
+}
+
+/* Restore browser-default heading scales inside the editor (GCDS global CSS resets these) */
+[contenteditable] h1 { font-size: 2em;    font-weight: 700; margin: 0.67em 0; }
+[contenteditable] h2 { font-size: 1.5em;  font-weight: 700; margin: 0.75em 0; }
+[contenteditable] h3 { font-size: 1.17em; font-weight: 700; margin: 0.83em 0; }
+[contenteditable] h4 { font-size: 1em;    font-weight: 700; margin: 1.12em 0; }
+[contenteditable] h5 { font-size: 0.83em; font-weight: 700; margin: 1.5em  0; }
+[contenteditable] h6 { font-size: 0.67em; font-weight: 700; margin: 1.67em 0; }

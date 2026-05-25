@@ -1,0 +1,19 @@
+{
+  "placeholder": "Rédigez votre commentaire ici…",
+  "toolbarLabel": "Options de mise en forme",
+  "bold": "Gras",
+  "italic": "Italique",
+  "underline": "Souligner",
+  "strikethrough": "Barrer",
+  "color": "Couleur du texte",
+  "blockFormat": "Format de bloc",
+  "blockNormal": "Normal",
+  "bulletList": "Liste à puces",
+  "orderedList": "Liste numérotée",
+  "indent": "Augmenter le retrait",
+  "outdent": "Diminuer le retrait",
+  "table": "Insérer un tableau",
+  "deleteTable": "Supprimer le tableau",
+  "undo": "Annuler",
+  "redo": "Rétablir"
+}

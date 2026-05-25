@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { GcdsFieldset, GcdsButton } from '@gcds-core/components-react'
 import { useLang } from './LangContext'
-import RichTextEditor from './RichTextEditor'
+import RichTextEditor from './components/richtext/RichTextEditor'
 import type { DocumentSection } from './data'
 
 // ── Types ────────────────────────────────────────────────────────────────────

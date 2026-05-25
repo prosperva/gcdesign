@@ -68,7 +68,7 @@ function cleanPastedHtml(html: string): string {
 }
 
 export default function RichTextEditor({ id, label, value, onChange }: RichTextEditorProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation('editor')
   const editorRef = useRef<HTMLDivElement>(null)
   const colorInputRef = useRef<HTMLInputElement>(null)
   const savedSelRef = useRef<Range | null>(null)
@@ -277,23 +277,23 @@ export default function RichTextEditor({ id, label, value, onChange }: RichTextE
     | { sep?: false; colorPicker?: false; sizePicker?: false; id: string; label: string; active: boolean; disabled?: boolean; child: React.ReactNode; action: () => void }
 
   const toolbarButtons: ToolbarItem[] = [
-    { id: 'bold',         label: t('comment.editorBold'),          active: formats.bold,          child: <strong>B</strong>,                                  action: () => exec('bold') },
-    { id: 'italic',       label: t('comment.editorItalic'),        active: formats.italic,        child: <em>I</em>,                                          action: () => exec('italic') },
-    { id: 'underline',    label: t('comment.editorUnderline'),     active: formats.underline,     child: <span style={{ textDecoration: 'underline' }}>U</span>, action: () => exec('underline') },
-    { id: 'strike',       label: t('comment.editorStrikethrough'), active: formats.strikethrough, child: <s>S</s>,                                            action: () => exec('strikeThrough') },
+    { id: 'bold',         label: t('bold'),          active: formats.bold,          child: <strong>B</strong>,                                  action: () => exec('bold') },
+    { id: 'italic',       label: t('italic'),        active: formats.italic,        child: <em>I</em>,                                          action: () => exec('italic') },
+    { id: 'underline',    label: t('underline'),     active: formats.underline,     child: <span style={{ textDecoration: 'underline' }}>U</span>, action: () => exec('underline') },
+    { id: 'strike',       label: t('strikethrough'), active: formats.strikethrough, child: <s>S</s>,                                            action: () => exec('strikeThrough') },
     { colorPicker: true },
     { sizePicker: true },
     { sep: true },
-    { id: 'ul',           label: t('comment.editorBulletList'),    active: formats.ul,            child: <>≡</>,                                              action: () => exec('insertUnorderedList') },
-    { id: 'ol',           label: t('comment.editorOrderedList'),   active: formats.ol,            child: <>1.</>,                                             action: () => exec('insertOrderedList') },
-    { id: 'indent',       label: t('comment.editorIndent'),        active: false,                 child: <>⇥</>,                                              action: () => exec('indent') },
-    { id: 'outdent',      label: t('comment.editorOutdent'),       active: false,                 child: <>⇤</>,                                              action: () => exec('outdent') },
+    { id: 'ul',           label: t('bulletList'),    active: formats.ul,            child: <>≡</>,                                              action: () => exec('insertUnorderedList') },
+    { id: 'ol',           label: t('orderedList'),   active: formats.ol,            child: <>1.</>,                                             action: () => exec('insertOrderedList') },
+    { id: 'indent',       label: t('indent'),        active: false,                 child: <>⇥</>,                                              action: () => exec('indent') },
+    { id: 'outdent',      label: t('outdent'),       active: false,                 child: <>⇤</>,                                              action: () => exec('outdent') },
     { sep: true },
-    { id: 'table',        label: t('comment.editorTable'),         active: false,                 child: <>⊞</>,                                              action: insertTable },
-    { id: 'table-delete', label: t('comment.editorDeleteTable'),   active: false, disabled: !formats.inTable, child: <>✕⊞</>,                               action: deleteTable },
+    { id: 'table',        label: t('table'),         active: false,                 child: <>⊞</>,                                              action: insertTable },
+    { id: 'table-delete', label: t('deleteTable'),   active: false, disabled: !formats.inTable, child: <>✕⊞</>,                               action: deleteTable },
     { sep: true },
-    { id: 'undo',         label: t('comment.editorUndo'),          active: false,                 child: <>↩</>,                                              action: () => exec('undo') },
-    { id: 'redo',         label: t('comment.editorRedo'),          active: false,                 child: <>↪</>,                                              action: () => exec('redo') },
+    { id: 'undo',         label: t('undo'),          active: false,                 child: <>↩</>,                                              action: () => exec('undo') },
+    { id: 'redo',         label: t('redo'),          active: false,                 child: <>↪</>,                                              action: () => exec('redo') },
   ]
 
   return (
@@ -308,7 +308,7 @@ export default function RichTextEditor({ id, label, value, onChange }: RichTextE
       <div
         role="toolbar"
         id={toolbarId}
-        aria-label={t('comment.editorToolbarLabel')}
+        aria-label={t('toolbarLabel')}
         aria-controls={id}
         style={{
           display: 'flex',
@@ -327,7 +327,7 @@ export default function RichTextEditor({ id, label, value, onChange }: RichTextE
           }
           if ('sizePicker' in btn && btn.sizePicker) {
             const headings = [
-              { value: 'p',  label: t('comment.editorBlockNormal') },
+              { value: 'p',  label: t('blockNormal') },
               { value: 'h1', label: 'H1' },
               { value: 'h2', label: 'H2' },
               { value: 'h3', label: 'H3' },
@@ -339,8 +339,8 @@ export default function RichTextEditor({ id, label, value, onChange }: RichTextE
               <select
                 key="size-picker"
                 value={formats.formatBlock || 'p'}
-                aria-label={t('comment.editorBlockFormat')}
-                title={t('comment.editorBlockFormat')}
+                aria-label={t('blockFormat')}
+                title={t('blockFormat')}
                 onMouseDown={() => {
                   const sel = window.getSelection()
                   if (sel && sel.rangeCount > 0) savedSelRef.current = sel.getRangeAt(0).cloneRange()
@@ -379,8 +379,8 @@ export default function RichTextEditor({ id, label, value, onChange }: RichTextE
                     type="button"
                     buttonRole="secondary"
                     size="small"
-                    aria-label={t('comment.editorColor')}
-                    title={t('comment.editorColor')}
+                    aria-label={t('color')}
+                    title={t('color')}
                   >
                     <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '2px', lineHeight: 1 }}>
                       <span>A</span>
@@ -425,7 +425,7 @@ export default function RichTextEditor({ id, label, value, onChange }: RichTextE
         role="textbox"
         aria-multiline="true"
         aria-labelledby={labelId}
-        data-placeholder={t('comment.editorPlaceholder')}
+        data-placeholder={t('placeholder')}
         onInput={() => onChange(editorRef.current?.innerHTML ?? '')}
         onPaste={handlePaste}
         onMouseDown={handleMouseDown}

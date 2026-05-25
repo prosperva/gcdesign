@@ -1,0 +1,19 @@
+{
+  "placeholder": "Write your comment here…",
+  "toolbarLabel": "Formatting options",
+  "bold": "Bold",
+  "italic": "Italic",
+  "underline": "Underline",
+  "strikethrough": "Strikethrough",
+  "color": "Text color",
+  "blockFormat": "Block format",
+  "blockNormal": "Normal",
+  "bulletList": "Bullet list",
+  "orderedList": "Numbered list",
+  "indent": "Indent",
+  "outdent": "Outdent",
+  "table": "Insert table",
+  "deleteTable": "Delete table",
+  "undo": "Undo",
+  "redo": "Redo"
+}

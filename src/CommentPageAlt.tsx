@@ -1,11 +1,9 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, type CSSProperties } from 'react'
 import { useTranslation, Trans } from 'react-i18next'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   GcdsHeading,
   GcdsText,
-  GcdsSelect,
-  GcdsInput,
   GcdsButton,
   GcdsAlert,
   GcdsNotice,
@@ -18,9 +16,42 @@ import { useAuth } from './AuthContext'
 import { DOCUMENTS } from './data'
 import {
   type SubComment, type RoleKey, type SectionComments, type Draft,
-  ROLE_KEYS, initComments,
-  Section, StepProgress,
+  type SupportStatus,
+  SUPPORT_STATUSES, isCommentEnabled,
+  initComments,
+  Section, StepProgress, RoleCombobox, SectionMultiSelect,
 } from './CommentShared'
+import RichTextEditor from './components/richtext/RichTextEditor'
+
+const selectStyle: CSSProperties = {
+  appearance: 'none',
+  width: '100%',
+  padding: '0.5rem 2.5rem 0.5rem 0.75rem',
+  border: '2px solid #284162',
+  borderRadius: '4px',
+  background: `white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23284162' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 0.75rem center`,
+  color: '#333',
+  fontSize: '1rem',
+  fontFamily: 'inherit',
+  boxSizing: 'border-box',
+  outline: 'none',
+  cursor: 'pointer',
+}
+
+const labelStyle: CSSProperties = {
+  fontWeight: 700,
+  display: 'block',
+  marginBottom: '0.25rem',
+  fontSize: '1rem',
+  fontFamily: 'inherit',
+}
+
+const hintStyle: CSSProperties = {
+  fontSize: '0.875rem',
+  color: '#5c5c5c',
+  margin: '0 0 0.375rem',
+  fontFamily: 'inherit',
+}
 
 export default function CommentPageAlt() {
   const { t } = useTranslation()
@@ -44,8 +75,10 @@ export default function CommentPageAlt() {
   })
 
   const [role, setRole] = useState<RoleKey | ''>(initialDraft?.role ?? '')
-  const [customRole, setCustomRole] = useState(initialDraft?.customRole ?? '')
   const [roleError, setRoleError] = useState('')
+  const [supportStatus, setSupportStatus] = useState<SupportStatus | ''>(initialDraft?.supportStatus ?? '')
+  const [generalComment, setGeneralComment] = useState(initialDraft?.generalComment ?? '')
+  const [selectedSectionIds, setSelectedSectionIds] = useState<string[]>(initialDraft?.selectedSectionIds ?? [])
   const [uploaderKey, setUploaderKey] = useState(0)
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([])
   const [comments, setComments] = useState<SectionComments[]>(initialDraft?.comments ?? initComments(sections))
@@ -55,9 +88,11 @@ export default function CommentPageAlt() {
   const [submitted, setSubmitted] = useState(false)
   const [activeTab, setActiveTab] = useState(0)
 
+  const commentEnabled = isCommentEnabled(supportStatus)
+
   function saveDraft() {
     const now = new Date().toISOString()
-    localStorage.setItem(draftKey, JSON.stringify({ role, customRole, comments, savedAt: now } satisfies Draft))
+    localStorage.setItem(draftKey, JSON.stringify({ role, supportStatus, generalComment, selectedSectionIds, comments, savedAt: now } satisfies Draft))
     setDraftSavedAt(now)
   }
 
@@ -65,18 +100,18 @@ export default function CommentPageAlt() {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
     autoSaveTimer.current = setTimeout(saveDraft, 1500)
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current) }
-  }, [role, customRole, comments])
+  }, [role, supportStatus, generalComment, selectedSectionIds, comments])
 
   function discardDraft() {
     localStorage.removeItem(draftKey)
     setRole('')
-    setCustomRole('')
+    setSupportStatus('')
+    setGeneralComment('')
+    setSelectedSectionIds([])
     setComments(initComments(sections))
     setDraftSavedAt(null)
     setDraftRestored(false)
   }
-
-  const effectiveRole = role === 'other' ? customRole.trim() : role
 
   const closingDate = new Date(doc?.closingDate ?? '')
   const isExpired = new Date() > closingDate
@@ -84,8 +119,11 @@ export default function CommentPageAlt() {
     year: 'numeric', month: 'long', day: 'numeric',
   })
 
-  const hasComment = comments.some(c => c.subComments.some(s => s.comment.replace(/<[^>]*>/g, '').trim()))
-  const canSubmit = !isExpired && (hasComment || uploadedFiles.length > 0)
+  const hasComment = commentEnabled && (
+    generalComment.replace(/<[^>]*>/g, '').trim().length > 0 ||
+    comments.some(c => c.subComments.some(s => s.comment.replace(/<[^>]*>/g, '').trim()))
+  )
+  const canSubmit = !isExpired && !!role && !!supportStatus && (!commentEnabled || hasComment || uploadedFiles.length > 0)
 
   function updateSection(sectionId: string, subComments: SubComment[]) {
     setComments(prev => prev.map(c => c.sectionId === sectionId ? { ...c, subComments } : c))
@@ -95,11 +133,6 @@ export default function CommentPageAlt() {
     e.preventDefault()
     if (!role) {
       setRoleError(t('comment.roleError'))
-      setTimeout(() => roleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0)
-      return
-    }
-    if (role === 'other' && !customRole.trim()) {
-      setRoleError(t('comment.roleOtherError'))
       setTimeout(() => roleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0)
       return
     }
@@ -116,7 +149,9 @@ export default function CommentPageAlt() {
   function handleReset() {
     localStorage.removeItem(draftKey)
     setRole('')
-    setCustomRole('')
+    setSupportStatus('')
+    setGeneralComment('')
+    setSelectedSectionIds([])
     setUploadedFiles([])
     setComments(initComments(sections))
     setDraftSavedAt(null)
@@ -126,17 +161,21 @@ export default function CommentPageAlt() {
 
   const requestBody = {
     userId: user.id,
-    role: effectiveRole,
+    role,
+    supportStatus,
+    generalComment: commentEnabled ? generalComment : '',
     documentId: doc?.[lang] ?? '',
     version: doc?.version ?? '',
     submittedAt: new Date().toISOString(),
     attachments: uploadedFiles,
-    sections: comments
-      .filter(c => c.subComments.some(s => s.comment.trim()))
-      .map(c => ({
-        sectionId: c.sectionId,
-        subComments: c.subComments.filter(s => s.comment.trim()).map(s => ({ comment: s.comment })),
-      })),
+    sections: commentEnabled
+      ? comments
+          .filter(c => selectedSectionIds.includes(c.sectionId) && c.subComments.some(s => s.comment.trim()))
+          .map(c => ({
+            sectionId: c.sectionId,
+            subComments: c.subComments.filter(s => s.comment.trim()).map(s => ({ comment: s.comment })),
+          }))
+      : [],
   }
 
   if (!doc) {
@@ -159,18 +198,30 @@ export default function CommentPageAlt() {
         </GcdsNotice>
 
         <div style={{ marginTop: '1.5rem' }}>
-          <GcdsText><strong>{t('comment.confirmRole')}:</strong>{' '}{effectiveRole || '—'}</GcdsText>
+          <GcdsText><strong>{t('comment.confirmRole')}:</strong>{' '}{role ? t(`comment.roles.${role}`) : '—'}</GcdsText>
+          <GcdsText><strong>{t('comment.confirmStatus')}:</strong>{' '}{supportStatus ? t(`comment.statuses.${supportStatus}`) : '—'}</GcdsText>
         </div>
 
-        {sections.map(section => {
+        {commentEnabled && generalComment.replace(/<[^>]*>/g, '').trim() && (
+          <div style={{ marginTop: '1.5rem' }}>
+            <GcdsHeading tag="h3">{t('comment.generalCommentLabel')}</GcdsHeading>
+            <div dangerouslySetInnerHTML={{ __html: generalComment }} />
+          </div>
+        )}
+
+        {commentEnabled && sections.filter(s => selectedSectionIds.includes(s.id)).map(section => {
           const sc = comments.find(c => c.sectionId === section.id)!
+          const hasAny = sc?.subComments.some(s => s.comment.trim())
+          if (!hasAny) return null
           return (
             <div key={section.id} style={{ marginTop: '1.5rem' }}>
               <GcdsHeading tag="h3">{section[lang]}</GcdsHeading>
               {sc.subComments.map((sub, i) => (
                 <div key={sub.id} style={{ marginBottom: '0.75rem' }}>
-                  <GcdsText><strong>{sc.subComments.length > 1 ? t('comment.commentLegendConfirm', { number: i + 1 }) : ''}</strong></GcdsText>
-                  <GcdsText>{sub.comment.trim() || <em>{t('comment.noComment')}</em>}</GcdsText>
+                  {sc.subComments.length > 1 && (
+                    <GcdsText><strong>{t('comment.commentLegendConfirm', { number: i + 1 })}</strong></GcdsText>
+                  )}
+                  <div dangerouslySetInnerHTML={{ __html: sub.comment }} />
                 </div>
               ))}
             </div>
@@ -209,7 +260,9 @@ export default function CommentPageAlt() {
     )
   }
 
-  const activeSection = sections[activeTab]
+  const filteredSections = sections.filter(s => selectedSectionIds.includes(s.id))
+  const clampedTab = Math.min(activeTab, Math.max(filteredSections.length - 1, 0))
+  const activeSection = filteredSections[clampedTab]
   const activeSectionComments = comments.find(c => c.sectionId === activeSection?.id)!
 
   return (
@@ -217,7 +270,7 @@ export default function CommentPageAlt() {
       <StepProgress current={1} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
         <GcdsHeading tag="h1">{t('comment.pageTitle')}</GcdsHeading>
-        <Link to={`/documents/${id}`} style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>
+        <Link to="/" style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>
           {t('comment.tryListLayout')}
         </Link>
       </div>
@@ -249,64 +302,88 @@ export default function CommentPageAlt() {
           </GcdsNotice>
         )}
 
-        <div ref={roleRef}>
-          <GcdsSelect
-            selectId="role"
-            name="role"
-            label={t('comment.roleLabel')}
-            hint={t('comment.roleHint')}
-            defaultValue={t('comment.rolePlaceholder')}
-            errorMessage={roleError || undefined}
-            onGcdsChange={(e: CustomEvent<string>) => { setRole(e.detail as RoleKey); setRoleError('') }}
+        <RoleCombobox
+          value={role}
+          error={roleError}
+          onChange={key => { setRole(key); if (key) setRoleError('') }}
+          containerRef={roleRef}
+        />
+
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label htmlFor="support-status" style={labelStyle}>
+            {t('comment.statusLabel')}
+            {' '}<span aria-hidden="true" style={{ color: '#bc3331' }}>*</span>
+          </label>
+          <p style={hintStyle}>{t('comment.statusHint')}</p>
+          <select
+            id="support-status"
+            value={supportStatus}
+            onChange={e => {
+              const next = e.target.value as SupportStatus | ''
+              setSupportStatus(next)
+              if (!isCommentEnabled(next)) setGeneralComment('')
+            }}
+            style={selectStyle}
           >
-            {ROLE_KEYS.map(key => (
-              <option key={key} value={key}>{t(`comment.roles.${key}`)}</option>
+            <option value="">{t('comment.statusPlaceholder')}</option>
+            {SUPPORT_STATUSES.map(s => (
+              <option key={s} value={s}>{t(`comment.statuses.${s}`)}</option>
             ))}
-          </GcdsSelect>
-          {role === 'other' && (
-            <GcdsInput
-              inputId="custom-role"
-              name="custom-role"
-              label={t('comment.roleOtherLabel')}
-              value={customRole}
-              onGcdsChange={(e: CustomEvent<string>) => { setCustomRole(e.detail); setRoleError('') }}
-              style={{ marginTop: '0.75rem' }}
-            />
-          )}
+          </select>
         </div>
 
-        {/* ── Side nav + content ────────────────────────────────────────────── */}
-        <div style={{ display: 'flex', gap: '2rem', marginTop: '2rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-          <div style={{ width: '220px', flexShrink: 0 }}>
-            <GcdsSideNav label={t('comment.sectionsLabel')} lang={lang}>
-              {sections.map((section, i) => {
-                const hasContent = comments.find(c => c.sectionId === section.id)
-                  ?.subComments.some(s => s.comment.replace(/<[^>]*>/g, '').trim())
-                return (
-                  <GcdsNavLink
-                    key={section.id}
-                    href="#"
-                    current={i === activeTab}
-                    onClick={(e: React.MouseEvent) => { e.preventDefault(); setActiveTab(i) }}
-                  >
-                    {section[lang]}{hasContent ? ' ✓' : ''}
-                  </GcdsNavLink>
-                )
-              })}
-            </GcdsSideNav>
-          </div>
+        {commentEnabled && (
+          <>
+            <RichTextEditor
+              id="general-comment"
+              label={t('comment.generalCommentLabel')}
+              value={generalComment}
+              onChange={setGeneralComment}
+            />
 
-          <div style={{ flex: 1, minWidth: 0 }}>
-            {activeSection && (
-              <Section
-                section={activeSection}
-                comments={activeSectionComments}
-                onUpdate={updateSection}
-                hideLegend
-              />
-            )}
-          </div>
-        </div>{/* end side-nav row */}
+            <SectionMultiSelect
+              sections={sections}
+              selectedIds={selectedSectionIds}
+              onChange={ids => { setSelectedSectionIds(ids); setActiveTab(0) }}
+            />
+
+            {/* ── Side nav + content ──────────────────────────────────────────── */}
+            {filteredSections.length > 0 && (
+              <div style={{ display: 'flex', gap: '2rem', marginTop: '1.5rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                <div style={{ width: '220px', flexShrink: 0 }}>
+                  <GcdsSideNav label={t('comment.sectionsLabel')} lang={lang}>
+                    {filteredSections.map((section, i) => {
+                      const hasContent = comments.find(c => c.sectionId === section.id)
+                        ?.subComments.some(s => s.comment.replace(/<[^>]*>/g, '').trim())
+                      return (
+                        <GcdsNavLink
+                          key={section.id}
+                          href="#"
+                          current={i === clampedTab}
+                          onClick={(e: React.MouseEvent) => { e.preventDefault(); setActiveTab(i) }}
+                        >
+                          {section[lang]}{hasContent ? ' ✓' : ''}
+                        </GcdsNavLink>
+                      )
+                    })}
+                  </GcdsSideNav>
+                </div>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {activeSection && (
+                    <Section
+                      section={activeSection}
+                      comments={activeSectionComments}
+                      onUpdate={updateSection}
+                      hideLegend
+                      showSplitControl={clampedTab === 0}
+                    />
+                  )}
+                </div>
+              </div>
+            )}{/* end side-nav row */}
+          </>
+        )}
 
         <GcdsFileUploader
           key={uploaderKey}

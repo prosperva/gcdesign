@@ -14,7 +14,6 @@ import {
 } from '@gcds-core/components-react'
 import { useLang } from './LangContext'
 import { DOCUMENTS } from './data'
-import DocumentsPage from './DocumentsPage'
 import CommentPage from './CommentPage'
 import CommentPageAlt from './CommentPageAlt'
 
@@ -28,10 +27,7 @@ function Breadcrumbs() {
     <GcdsBreadcrumbs slot="breadcrumb" lang={lang}>
       <GcdsBreadcrumbsItem href="/">{t('nav.home')}</GcdsBreadcrumbsItem>
       {doc && (
-        <GcdsBreadcrumbsItem href="/documents">{t('nav.documents')}</GcdsBreadcrumbsItem>
-      )}
-      {doc && (
-        <GcdsBreadcrumbsItem href={`/documents/${doc.id}`}>{doc[lang]}</GcdsBreadcrumbsItem>
+        <GcdsBreadcrumbsItem href={`/documents/${doc.id}/alt`}>{doc[lang]}</GcdsBreadcrumbsItem>
       )}
     </GcdsBreadcrumbs>
   )
@@ -75,9 +71,7 @@ export default function App() {
   return (
     <Routes>
       <Route element={<AppLayout />}>
-        <Route path="/" element={<DocumentsPage />} />
-        <Route path="/documents" element={<DocumentsPage />} />
-        <Route path="/documents/:id" element={<CommentPage />} />
+        <Route path="/" element={<CommentPage />} />
         <Route path="/documents/:id/alt" element={<CommentPageAlt />} />
       </Route>
     </Routes>

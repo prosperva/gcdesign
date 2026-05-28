@@ -376,7 +376,7 @@ export default function CommentPageAlt() {
                       comments={activeSectionComments}
                       onUpdate={updateSection}
                       hideLegend
-                      showSplitControl={clampedTab === 0}
+                      showSplitControl={!!activeSection.allowSplit}
                     />
                   )}
                 </div>

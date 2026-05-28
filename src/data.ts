@@ -2,6 +2,7 @@ export interface DocumentSection {
   id: string
   en: string
   fr: string
+  allowSplit?: boolean
 }
 
 export interface DocumentRecord {
@@ -13,6 +14,15 @@ export interface DocumentRecord {
   sections: DocumentSection[]
 }
 
+export const SECTIONS: DocumentSection[] = [
+  { id: 'purpose',      en: 'Purpose and Scope',         fr: 'Objet et portée' },
+  { id: 'defs',         en: 'Definitions',                fr: 'Définitions' },
+  { id: 'policy',       en: 'Policy Requirements',        fr: 'Exigences de la politique', allowSplit: true },
+  { id: 'roles',        en: 'Roles and Responsibilities', fr: 'Rôles et responsabilités' },
+  { id: 'requirements', en: 'Requirements',               fr: 'Exigences' },
+  { id: 'controls',     en: 'Security Controls',          fr: 'Contrôles de sécurité' },
+]
+
 export const DOCUMENTS: DocumentRecord[] = [
   {
     id: 'policy-im',
@@ -20,12 +30,7 @@ export const DOCUMENTS: DocumentRecord[] = [
     fr: 'Politique sur la gestion de l\'information (ébauche)',
     version: '1.2',
     closingDate: '2026-06-30',
-    sections: [
-      { id: 'purpose', en: 'Purpose and Scope',         fr: 'Objet et portée' },
-      { id: 'defs',    en: 'Definitions',                fr: 'Définitions' },
-      { id: 'policy',  en: 'Policy Requirements',        fr: 'Exigences de la politique' },
-      { id: 'roles',   en: 'Roles and Responsibilities', fr: 'Rôles et responsabilités' },
-    ],
+    sections: SECTIONS,
   },
   {
     id: 'directive-data',
@@ -33,11 +38,7 @@ export const DOCUMENTS: DocumentRecord[] = [
     fr: 'Directive sur la gestion des données',
     version: '2.0',
     closingDate: '2026-07-15',
-    sections: [
-      { id: 'purpose',      en: 'Purpose and Scope', fr: 'Objet et portée' },
-      { id: 'defs',         en: 'Definitions',        fr: 'Définitions' },
-      { id: 'requirements', en: 'Requirements',       fr: 'Exigences' },
-    ],
+    sections: SECTIONS,
   },
   {
     id: 'standard-security',
@@ -45,9 +46,6 @@ export const DOCUMENTS: DocumentRecord[] = [
     fr: 'Norme sur les contrôles de cybersécurité',
     version: '1.0',
     closingDate: '2025-03-31',
-    sections: [
-      { id: 'purpose',  en: 'Purpose and Scope',  fr: 'Objet et portée' },
-      { id: 'controls', en: 'Security Controls',  fr: 'Contrôles de sécurité' },
-    ],
+    sections: SECTIONS,
   },
 ]

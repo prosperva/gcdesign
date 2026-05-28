@@ -369,7 +369,7 @@ export default function CommentPage() {
               <div>
                 {sections
                   .filter(s => selectedSectionIds.includes(s.id))
-                  .map((section, i) => {
+                  .map((section) => {
                     const sectionComments = comments.find(c => c.sectionId === section.id)!
                     return (
                       <Section
@@ -377,7 +377,7 @@ export default function CommentPage() {
                         section={section}
                         comments={sectionComments}
                         onUpdate={updateSection}
-                        showSplitControl={i === 0}
+                        showSplitControl={!!section.allowSplit}
                       />
                     )
                   })}

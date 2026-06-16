@@ -8,6 +8,7 @@
   "color": "Couleur du texte",
   "blockFormat": "Format de bloc",
   "blockNormal": "Normal",
+  "fontSize": "Taille de police",
   "bulletList": "Liste à puces",
   "orderedList": "Liste numérotée",
   "indent": "Augmenter le retrait",

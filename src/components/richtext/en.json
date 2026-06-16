@@ -8,6 +8,7 @@
   "color": "Text color",
   "blockFormat": "Block format",
   "blockNormal": "Normal",
+  "fontSize": "Font size",
   "bulletList": "Bullet list",
   "orderedList": "Numbered list",
   "indent": "Indent",

@@ -15,18 +15,79 @@ interface Formats {
   underline: boolean
   strikethrough: boolean
   formatBlock: string
+  fontSize: string
   ul: boolean
   ol: boolean
   inTable: boolean
 }
+
+const FONT_SIZES = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px']
 
 const ALLOWED_TAGS = new Set([
   'P','H1','H2','H3','H4','H5','H6','BR','STRONG','B','EM','I','U','S','STRIKE','DEL',
   'UL','OL','LI','TABLE','THEAD','TBODY','TR','TH','TD','FONT','SPAN',
 ])
 
+// Word pastes lists as <p style="mso-list:l0 level1 lfo1"> with a hidden
+// marker span (mso-list:Ignore) holding the bullet/number as plain text,
+// instead of real <ul>/<ol>/<li>. Rebuild proper list markup before cleaning.
+function convertWordLists(doc: Document) {
+  const paragraphs = Array.from(doc.body.querySelectorAll('p'))
+  const stack: { level: number; list: Element }[] = []
+
+  for (const p of paragraphs) {
+    const style = p.getAttribute('style') || ''
+    const levelMatch = style.match(/mso-list:\s*l\d+\s+level(\d+)/i)
+
+    if (!levelMatch) {
+      stack.length = 0
+      continue
+    }
+
+    const level = parseInt(levelMatch[1], 10)
+
+    const markerSpan = Array.from(p.querySelectorAll('span'))
+      .find(s => /mso-list\s*:\s*ignore/i.test(s.getAttribute('style') || ''))
+    const markerText = (markerSpan?.textContent ?? '').replace(/ /g, ' ').trim()
+    markerSpan?.remove()
+
+    const isOrdered = /^[a-zA-Z0-9]+[.)]/.test(markerText)
+    const tagName = isOrdered ? 'ol' : 'ul'
+
+    while (stack.length && stack[stack.length - 1].level > level) stack.pop()
+
+    let parentList: Element
+    const top = stack[stack.length - 1]
+    if (top && top.level === level) {
+      parentList = top.list
+    } else {
+      parentList = doc.createElement(tagName)
+      if (top) {
+        const parentLi = top.list.lastElementChild
+        if (parentLi) parentLi.appendChild(parentList)
+        else p.parentNode?.insertBefore(parentList, p)
+      } else {
+        p.parentNode?.insertBefore(parentList, p)
+      }
+      stack.push({ level, list: parentList })
+    }
+
+    const li = doc.createElement('li')
+    while (p.firstChild) li.appendChild(p.firstChild)
+
+    const first = li.firstChild
+    if (first?.nodeType === Node.TEXT_NODE) {
+      first.textContent = (first.textContent ?? '').replace(/^[\s ]+/, '')
+    }
+
+    parentList.appendChild(li)
+    p.remove()
+  }
+}
+
 function cleanPastedHtml(html: string): string {
   const doc = new DOMParser().parseFromString(html, 'text/html')
+  convertWordLists(doc)
 
   function clean(node: Node): string {
     if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? ''
@@ -44,11 +105,12 @@ function cleanPastedHtml(html: string): string {
       return color ? `<span style="color:${color}">${children}</span>` : children
     }
 
-    // SPAN → keep only if it carries a color or text-decoration style
+    // SPAN → keep only if it carries a color, text-decoration, or font-size style
     if (tag === 'SPAN') {
       const color = el.style.color
       const dec = el.style.textDecoration
-      const styleStr = [color ? `color:${color}` : '', dec ? `text-decoration:${dec}` : ''].filter(Boolean).join(';')
+      const fontSize = el.style.fontSize
+      const styleStr = [color ? `color:${color}` : '', dec ? `text-decoration:${dec}` : '', fontSize ? `font-size:${fontSize}` : ''].filter(Boolean).join(';')
       return styleStr ? `<span style="${styleStr}">${children}</span>` : children
     }
 
@@ -73,7 +135,7 @@ export default function RichTextEditor({ id, label, value, onChange }: RichTextE
   const colorInputRef = useRef<HTMLInputElement>(null)
   const savedSelRef = useRef<Range | null>(null)
   const [formats, setFormats] = useState<Formats>({
-    bold: false, italic: false, underline: false, strikethrough: false, formatBlock: '',
+    bold: false, italic: false, underline: false, strikethrough: false, formatBlock: '', fontSize: '',
     ul: false, ol: false, inTable: false,
   })
   const [currentColor, setCurrentColor] = useState('#000000')
@@ -238,6 +300,16 @@ export default function RichTextEditor({ id, label, value, onChange }: RichTextE
     syncFormats()
   }
 
+  function getCurrentFontSize(): string {
+    const sel = window.getSelection()
+    if (!sel || sel.rangeCount === 0) return ''
+    let node: Node | null = sel.getRangeAt(0).startContainer
+    if (node.nodeType === Node.TEXT_NODE) node = node.parentNode
+    if (!node || !editorRef.current?.contains(node)) return ''
+    const size = window.getComputedStyle(node as Element).fontSize
+    return FONT_SIZES.includes(size) ? size : ''
+  }
+
   function syncFormats() {
     const table = getTableAncestor()
     editorRef.current?.querySelectorAll('table').forEach(t => t.removeAttribute('data-selected'))
@@ -248,10 +320,28 @@ export default function RichTextEditor({ id, label, value, onChange }: RichTextE
       underline:     d.queryCommandState('underline'),
       strikethrough: d.queryCommandState('strikeThrough'),
       formatBlock:   d.queryCommandValue('formatBlock').toLowerCase() || 'p',
+      fontSize:      getCurrentFontSize(),
       ul:            d.queryCommandState('insertUnorderedList'),
       ol:            d.queryCommandState('insertOrderedList'),
       inTable:       !!table,
     })
+  }
+
+  function applyFontSize(size: string) {
+    editorRef.current?.focus()
+    if (savedSelRef.current) {
+      const sel = window.getSelection()
+      if (sel) { sel.removeAllRanges(); sel.addRange(savedSelRef.current) }
+    }
+    d.execCommand('fontSize', false, '7')
+    editorRef.current?.querySelectorAll('font[size="7"]').forEach(el => {
+      const span = document.createElement('span')
+      span.style.fontSize = size
+      span.innerHTML = el.innerHTML
+      el.replaceWith(span)
+    })
+    onChange(editorRef.current?.innerHTML ?? '')
+    syncFormats()
   }
 
   function openColorPicker() {
@@ -274,7 +364,8 @@ export default function RichTextEditor({ id, label, value, onChange }: RichTextE
     | { sep: true }
     | { colorPicker: true }
     | { sizePicker: true }
-    | { sep?: false; colorPicker?: false; sizePicker?: false; id: string; label: string; active: boolean; disabled?: boolean; child: React.ReactNode; action: () => void }
+    | { fontSizePicker: true }
+    | { sep?: false; colorPicker?: false; sizePicker?: false; fontSizePicker?: false; id: string; label: string; active: boolean; disabled?: boolean; child: React.ReactNode; action: () => void }
 
   const toolbarButtons: ToolbarItem[] = [
     { id: 'bold',         label: t('bold'),          active: formats.bold,          child: <strong>B</strong>,                                  action: () => exec('bold') },
@@ -283,6 +374,7 @@ export default function RichTextEditor({ id, label, value, onChange }: RichTextE
     { id: 'strike',       label: t('strikethrough'), active: formats.strikethrough, child: <s>S</s>,                                            action: () => exec('strikeThrough') },
     { colorPicker: true },
     { sizePicker: true },
+    { fontSizePicker: true },
     { sep: true },
     { id: 'ul',           label: t('bulletList'),    active: formats.ul,            child: <>≡</>,                                              action: () => exec('insertUnorderedList') },
     { id: 'ol',           label: t('orderedList'),   active: formats.ol,            child: <>1.</>,                                             action: () => exec('insertOrderedList') },
@@ -368,6 +460,37 @@ export default function RichTextEditor({ id, label, value, onChange }: RichTextE
                 }}
               >
                 {headings.map(h => <option key={h.value} value={h.value}>{h.label}</option>)}
+              </select>
+            )
+          }
+          if ('fontSizePicker' in btn && btn.fontSizePicker) {
+            return (
+              <select
+                key="font-size-picker"
+                value={formats.fontSize || ''}
+                aria-label={t('fontSize')}
+                title={t('fontSize')}
+                onMouseDown={() => {
+                  const sel = window.getSelection()
+                  if (sel && sel.rangeCount > 0) savedSelRef.current = sel.getRangeAt(0).cloneRange()
+                }}
+                onChange={e => applyFontSize(e.target.value)}
+                style={{
+                  appearance: 'none',
+                  padding: '0.4rem 1.75rem 0.4rem 0.5rem',
+                  border: '2px solid #284162',
+                  borderRadius: '4px',
+                  background: `white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23284162' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 0.5rem center`,
+                  color: '#284162',
+                  fontSize: '0.875rem',
+                  fontFamily: 'inherit',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  outline: 'none',
+                }}
+              >
+                <option value="">{t('blockNormal')}</option>
+                {FONT_SIZES.map(size => <option key={size} value={size}>{parseInt(size, 10)}</option>)}
               </select>
             )
           }

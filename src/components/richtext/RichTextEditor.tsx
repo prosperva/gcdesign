@@ -28,30 +28,58 @@ const ALLOWED_TAGS = new Set([
   'UL','OL','LI','TABLE','THEAD','TBODY','TR','TH','TD','FONT','SPAN',
 ])
 
+// Word encodes list number formats (decimal, alpha-lower, roman-lower, …) in
+// @list CSS rules in the clipboard <style> block. Parse them so nested lists
+// get the right list-style-type instead of all defaulting to decimal.
+function parseWordListFormats(doc: Document): Map<string, string> {
+  const map = new Map<string, string>()
+  const styleText = Array.from(doc.querySelectorAll('style')).map(s => s.textContent ?? '').join('\n')
+  const cssTypeMap: Record<string, string> = {
+    'decimal':     'decimal',
+    'alpha-lower': 'lower-alpha',
+    'alpha-upper': 'upper-alpha',
+    'roman-lower': 'lower-roman',
+    'roman-upper': 'upper-roman',
+  }
+  const ruleRe = /@list\s+(l\d+):level(\d+)\s*\{([^}]*)\}/gi
+  let m: RegExpExecArray | null
+  while ((m = ruleRe.exec(styleText)) !== null) {
+    const fmtMatch = /mso-level-number-format\s*:\s*([a-z-]+)/i.exec(m[3])
+    if (fmtMatch) {
+      const css = cssTypeMap[fmtMatch[1]]
+      if (css) map.set(`${m[1]}:${m[2]}`, css)
+    }
+  }
+  return map
+}
+
 // Word pastes lists as <p style="mso-list:l0 level1 lfo1"> with a hidden
 // marker span (mso-list:Ignore) holding the bullet/number as plain text,
 // instead of real <ul>/<ol>/<li>. Rebuild proper list markup before cleaning.
 function convertWordLists(doc: Document) {
+  const listFormats = parseWordListFormats(doc)
   const paragraphs = Array.from(doc.body.querySelectorAll('p'))
   const stack: { level: number; list: Element }[] = []
 
   for (const p of paragraphs) {
     const style = p.getAttribute('style') || ''
-    const levelMatch = style.match(/mso-list:\s*l\d+\s+level(\d+)/i)
+    const listMatch = style.match(/mso-list:\s*(l\d+)\s+level(\d+)/i)
 
-    if (!levelMatch) {
+    if (!listMatch) {
       stack.length = 0
       continue
     }
 
-    const level = parseInt(levelMatch[1], 10)
+    const listId = listMatch[1]
+    const level = parseInt(listMatch[2], 10)
 
     const markerSpan = Array.from(p.querySelectorAll('span'))
       .find(s => /mso-list\s*:\s*ignore/i.test(s.getAttribute('style') || ''))
-    const markerText = (markerSpan?.textContent ?? '').replace(/ /g, ' ').trim()
+    const markerText = (markerSpan?.textContent ?? '').replace(/\u00a0/g, ' ').trim()
     markerSpan?.remove()
 
-    const isOrdered = /^[a-zA-Z0-9]+[.)]/.test(markerText)
+    const cssType = listFormats.get(`${listId}:${level}`)
+    const isOrdered = cssType ? true : /^[a-zA-Z0-9]+[.)]/.test(markerText)
     const tagName = isOrdered ? 'ol' : 'ul'
 
     while (stack.length && stack[stack.length - 1].level > level) stack.pop()
@@ -62,6 +90,7 @@ function convertWordLists(doc: Document) {
       parentList = top.list
     } else {
       parentList = doc.createElement(tagName)
+      if (cssType) (parentList as HTMLElement).style.listStyleType = cssType
       if (top) {
         const parentLi = top.list.lastElementChild
         if (parentLi) parentLi.appendChild(parentList)
@@ -77,14 +106,13 @@ function convertWordLists(doc: Document) {
 
     const first = li.firstChild
     if (first?.nodeType === Node.TEXT_NODE) {
-      first.textContent = (first.textContent ?? '').replace(/^[\s ]+/, '')
+      first.textContent = (first.textContent ?? '').replace(/^[\s\u00a0]+/, '')
     }
 
     parentList.appendChild(li)
     p.remove()
   }
 }
-
 function cleanPastedHtml(html: string): string {
   const doc = new DOMParser().parseFromString(html, 'text/html')
   convertWordLists(doc)
@@ -117,7 +145,15 @@ function cleanPastedHtml(html: string): string {
     const out = tag === 'B' ? 'strong' : tag === 'I' ? 'em' : tag === 'STRIKE' || tag === 'DEL' ? 's' : tag.toLowerCase()
     let attrs = ''
     if (tag === 'TABLE') attrs += ' style="border-collapse:collapse;margin:0.5rem 0;width:100%"'
-    if (tag === 'TD' || tag === 'TH') attrs += ' style="border:1px solid #6f6f6f;padding:0.375rem 0.5rem"'
+    if (tag === 'TD' || tag === 'TH') {
+      const bg = el.style.backgroundColor || el.style.background || el.getAttribute('bgcolor')
+      const bgStr = bg ? `;background-color:${bg}` : ''
+      attrs += ` style="border:1px solid #6f6f6f;padding:0.375rem 0.5rem${bgStr}"`
+    }
+    if (tag === 'OL' || tag === 'UL') {
+      const lsType = el.style.listStyleType
+      if (lsType) attrs += ` style="list-style-type:${lsType}"`
+    }
     const colspan = el.getAttribute('colspan')
     const rowspan = el.getAttribute('rowspan')
     if (colspan) attrs += ` colspan="${colspan}"`

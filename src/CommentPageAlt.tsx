@@ -129,8 +129,8 @@ export default function CommentPageAlt() {
     setComments(prev => prev.map(c => c.sectionId === sectionId ? { ...c, subComments } : c))
   }
 
-  function handleSubmit(e: { preventDefault: () => void }) {
-    e.preventDefault()
+  function handleSubmit() {
+    if (!canSubmit) return
     if (!role) {
       setRoleError(t('comment.roleError'))
       setTimeout(() => roleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0)
@@ -291,7 +291,7 @@ export default function CommentPageAlt() {
         </>
       )}
 
-      {!isExpired && <form onSubmit={handleSubmit}>
+      {!isExpired && <div>
         {draftRestored && (
           <GcdsNotice noticeRole="info" noticeTitleTag="h2" noticeTitle={t('draft.restoredTitle')} style={{ marginBottom: '1.5rem' }}>
             {t('draft.restoredBody')}
@@ -414,7 +414,7 @@ export default function CommentPageAlt() {
         )}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-          <GcdsButton type="submit" disabled={!canSubmit}>{t('comment.submit')}</GcdsButton>
+          <GcdsButton type="button" disabled={!canSubmit} onClick={handleSubmit}>{t('comment.submit')}</GcdsButton>
           <GcdsButton type="button" buttonRole="secondary" onClick={saveDraft}>{t('draft.save')}</GcdsButton>
           {draftSavedAt && (
             <p style={{ margin: 0, fontSize: '0.875rem', color: '#5c5c5c' }}>
@@ -432,7 +432,7 @@ export default function CommentPageAlt() {
             </p>
           )}
         </div>
-      </form>}
+      </div>}
     </>
   )
 }

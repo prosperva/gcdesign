@@ -29,7 +29,7 @@ export const DOCUMENTS: DocumentRecord[] = [
     en: 'Draft Policy on Information Management',
     fr: 'Politique sur la gestion de l\'information (ébauche)',
     version: '1.2',
-    closingDate: '2026-06-30',
+    closingDate: '2026-12-31',
     sections: SECTIONS,
   },
   {
@@ -37,7 +37,7 @@ export const DOCUMENTS: DocumentRecord[] = [
     en: 'Directive on Data Management',
     fr: 'Directive sur la gestion des données',
     version: '2.0',
-    closingDate: '2026-07-15',
+    closingDate: '2027-01-15',
     sections: SECTIONS,
   },
   {

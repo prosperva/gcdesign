@@ -148,8 +148,8 @@ export default function CommentPage() {
 
   const canSubmit = !!docId && !!role && !!supportStatus && (!commentEnabled || hasContent)
 
-  function handleSubmit(e: { preventDefault: () => void }) {
-    e.preventDefault()
+  function handleSubmit() {
+    if (!canSubmit) return
     if (!role) {
       setRoleError(t('comment.roleError'))
       setTimeout(() => roleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0)
@@ -281,7 +281,7 @@ export default function CommentPage() {
       <GcdsHeading tag="h1">{t('comment.pageTitle')}</GcdsHeading>
       <GcdsText>{t('comment.intro')}</GcdsText>
 
-      <form onSubmit={handleSubmit}>
+      <div>
         {/* 1 ── Role */}
         <RoleCombobox
           value={role}
@@ -417,7 +417,7 @@ export default function CommentPage() {
 
         {/* 6 ── Actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-          <GcdsButton type="submit" disabled={!canSubmit}>{t('comment.submit')}</GcdsButton>
+          <GcdsButton type="button" disabled={!canSubmit} onClick={handleSubmit}>{t('comment.submit')}</GcdsButton>
           {draftKey && (
             <GcdsButton type="button" buttonRole="secondary" onClick={saveDraft}>{t('draft.save')}</GcdsButton>
           )}
@@ -437,7 +437,7 @@ export default function CommentPage() {
             </p>
           )}
         </div>
-      </form>
+      </div>
 
       {docId && (
         <Link to={`/documents/${docId}/alt`} style={{ fontSize: '0.875rem', display: 'block', marginTop: '1.5rem' }}>

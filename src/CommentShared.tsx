@@ -17,6 +17,12 @@ export interface SectionComments {
   subComments: SubComment[]
 }
 
+export interface SplitComment {
+  id: string
+  sectionId: string
+  comment: string
+}
+
 export const ROLE_KEYS = ['manager','director','architect','analyst','researcher','developer','policy'] as const
 export type RoleKey = typeof ROLE_KEYS[number]
 
@@ -46,11 +52,14 @@ export interface Draft {
   supportStatus?: SupportStatus | ''
   generalComment?: string
   selectedSectionIds?: string[]
-  comments: SectionComments[]
+  comments?: SectionComments[]
+  splitComments?: SplitComment[]
   savedAt: string
 }
 
 export const emptySubComment = (): SubComment => ({ id: crypto.randomUUID(), comment: '' })
+
+export const emptySplitComment = (): SplitComment => ({ id: crypto.randomUUID(), sectionId: '', comment: '' })
 
 export const initComments = (sections: DocumentSection[]): SectionComments[] =>
   sections.map(s => ({ sectionId: s.id, subComments: [emptySubComment()] }))

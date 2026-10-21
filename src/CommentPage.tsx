@@ -7,15 +7,16 @@ import {
   GcdsButton,
   GcdsNotice,
   GcdsFileUploader,
+  GcdsFieldset,
 } from '@gcds-core/components-react'
 import { useLang } from './LangContext'
 import { useAuth } from './AuthContext'
-import { DOCUMENTS } from './data'
+import { DOCUMENTS, type DocumentSection } from './data'
 import {
-  type SubComment, type RoleKey, type SectionComments, type Draft,
+  type RoleKey, type Draft, type SplitComment,
   type SupportStatus,
-  SUPPORT_STATUSES, isCommentEnabled,
-  initComments, Section, StepProgress, RoleCombobox, SectionMultiSelect,
+  SUPPORT_STATUSES, isCommentEnabled, emptySplitComment,
+  StepProgress, RoleCombobox,
 } from './CommentShared'
 import RichTextEditor from './components/richtext/RichTextEditor'
 
@@ -50,6 +51,60 @@ const hintStyle: CSSProperties = {
   fontFamily: 'inherit',
 }
 
+// ── SplitCommentField ──────────────────────────────────────────────────────
+// One additional comment block created via the "split comment" button. Each
+// block may optionally target a single section; a section already chosen in
+// another block is disabled here so it can't be picked twice.
+
+interface SplitCommentFieldProps {
+  sections: DocumentSection[]
+  lang: 'en' | 'fr'
+  index: number
+  usedSectionIds: string[]
+  value: SplitComment
+  onChange: (next: SplitComment) => void
+  onRemove: () => void
+}
+
+function SplitCommentField({ sections, lang, index, usedSectionIds, value, onChange, onRemove }: SplitCommentFieldProps) {
+  const { t } = useTranslation()
+  return (
+    <GcdsFieldset
+      legend={t('comment.commentLegend', { number: index + 1 })}
+      legendSize="h4"
+      style={{ marginTop: '1rem', paddingLeft: '1rem', borderLeft: '3px solid #26374a' }}
+    >
+      <div style={{ marginBottom: '0.75rem' }}>
+        <label htmlFor={`split-section-${value.id}`} style={labelStyle}>
+          {t('comment.splitSectionLabel')}
+        </label>
+        <select
+          id={`split-section-${value.id}`}
+          value={value.sectionId}
+          onChange={e => onChange({ ...value, sectionId: e.target.value })}
+          style={selectStyle}
+        >
+          <option value="">{t('comment.splitSectionPlaceholder')}</option>
+          {sections.map(s => (
+            <option key={s.id} value={s.id} disabled={usedSectionIds.includes(s.id)}>
+              {s[lang]}
+            </option>
+          ))}
+        </select>
+      </div>
+      <RichTextEditor
+        id={`split-comment-${value.id}`}
+        label={t('comment.commentLabel')}
+        value={value.comment}
+        onChange={html => onChange({ ...value, comment: html })}
+      />
+      <GcdsButton type="button" buttonRole="danger" size="small" style={{ marginTop: '0.5rem' }} onClick={onRemove}>
+        {t('comment.removeComment')}
+      </GcdsButton>
+    </GcdsFieldset>
+  )
+}
+
 export default function CommentPage() {
   const { t } = useTranslation()
   const { lang } = useLang()
@@ -71,8 +126,7 @@ export default function CommentPage() {
   const [roleError, setRoleError] = useState('')
   const [supportStatus, setSupportStatus] = useState<SupportStatus | ''>('')
   const [generalComment, setGeneralComment] = useState('')
-  const [selectedSectionIds, setSelectedSectionIds] = useState<string[]>([])
-  const [comments, setComments] = useState<SectionComments[]>([])
+  const [splitComments, setSplitComments] = useState<SplitComment[]>([])
   const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null)
   const [draftRestored, setDraftRestored] = useState(false)
   const [uploaderKey, setUploaderKey] = useState(0)
@@ -85,7 +139,7 @@ export default function CommentPage() {
     if (!docId || !doc) return
     setSupportStatus('')
     setGeneralComment('')
-    setSelectedSectionIds([])
+    setSplitComments([])
     try {
       const raw = localStorage.getItem(`draft:${user.id}:${docId}:v${doc.version}`)
       const draft: Draft | null = raw ? JSON.parse(raw) : null
@@ -93,17 +147,15 @@ export default function CommentPage() {
         if (draft.role) setRole(draft.role)
         if (draft.supportStatus) setSupportStatus(draft.supportStatus)
         setGeneralComment(draft.generalComment ?? '')
-        setSelectedSectionIds(draft.selectedSectionIds ?? [])
-        setComments(draft.comments)
+        setSplitComments(draft.splitComments ?? [])
         setDraftSavedAt(draft.savedAt)
         setDraftRestored(true)
       } else {
-        setComments(initComments(doc.sections))
         setDraftSavedAt(null)
         setDraftRestored(false)
       }
     } catch {
-      setComments(initComments(doc.sections))
+      setSplitComments([])
     }
   }, [docId])
 
@@ -112,13 +164,13 @@ export default function CommentPage() {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
     autoSaveTimer.current = setTimeout(saveDraft, 1500)
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current) }
-  }, [role, supportStatus, generalComment, selectedSectionIds, comments, draftKey])
+  }, [role, supportStatus, generalComment, splitComments, draftKey])
 
   function saveDraft() {
     if (!draftKey) return
     const now = new Date().toISOString()
     localStorage.setItem(draftKey, JSON.stringify({
-      role, supportStatus, generalComment, selectedSectionIds, comments, savedAt: now,
+      role, supportStatus, generalComment, splitComments, savedAt: now,
     } satisfies Draft))
     setDraftSavedAt(now)
   }
@@ -127,23 +179,15 @@ export default function CommentPage() {
     if (draftKey) localStorage.removeItem(draftKey)
     setSupportStatus('')
     setGeneralComment('')
-    setSelectedSectionIds([])
-    setComments(initComments(sections))
+    setSplitComments([])
     setDraftSavedAt(null)
     setDraftRestored(false)
-  }
-
-  function updateSection(sectionId: string, subComments: SubComment[]) {
-    setComments(prev => prev.map(c => c.sectionId === sectionId ? { ...c, subComments } : c))
   }
 
   const commentEnabled = isCommentEnabled(supportStatus)
   const hasContent =
     generalComment.replace(/<[^>]*>/g, '').trim().length > 0 ||
-    comments.some(c =>
-      selectedSectionIds.includes(c.sectionId) &&
-      c.subComments.some(s => s.comment.replace(/<[^>]*>/g, '').trim())
-    ) ||
+    splitComments.some(s => s.comment.replace(/<[^>]*>/g, '').trim()) ||
     uploadedFiles.length > 0
 
   const canSubmit = !!docId && !!role && !!supportStatus && (!commentEnabled || hasContent)
@@ -172,10 +216,9 @@ export default function CommentPage() {
     setRoleError('')
     setSupportStatus('')
     setGeneralComment('')
-    setSelectedSectionIds([])
+    setSplitComments([])
     setUploadedFiles([])
     setUploaderKey(k => k + 1)
-    setComments([])
     setDraftSavedAt(null)
     setDraftRestored(false)
     setSubmitted(false)
@@ -191,12 +234,9 @@ export default function CommentPage() {
     attachments: uploadedFiles,
     generalComment: commentEnabled ? generalComment : '',
     sections: commentEnabled
-      ? comments
-          .filter(c => selectedSectionIds.includes(c.sectionId) && c.subComments.some(s => s.comment.trim()))
-          .map(c => ({
-            sectionId: c.sectionId,
-            subComments: c.subComments.filter(s => s.comment.trim()).map(s => ({ comment: s.comment })),
-          }))
+      ? splitComments
+          .filter(s => s.comment.trim())
+          .map(s => ({ sectionId: s.sectionId || null, comment: s.comment }))
       : [],
   }
 
@@ -222,23 +262,16 @@ export default function CommentPage() {
           </div>
         )}
 
-        {commentEnabled && selectedSectionIds.length > 0 && sections
-          .filter(s => selectedSectionIds.includes(s.id))
-          .map(section => {
-            const sc = comments.find(c => c.sectionId === section.id)!
-            const hasAny = sc?.subComments.some(s => s.comment.trim())
-            if (!hasAny) return null
+        {commentEnabled && splitComments
+          .filter(s => s.comment.replace(/<[^>]*>/g, '').trim())
+          .map((s, i) => {
+            const section = sections.find(sec => sec.id === s.sectionId)
             return (
-              <div key={section.id} style={{ marginTop: '1.5rem' }}>
-                <GcdsHeading tag="h3">{section[lang]}</GcdsHeading>
-                {sc.subComments.map((sub, i) => (
-                  <div key={sub.id} style={{ marginBottom: '0.75rem' }}>
-                    {sc.subComments.length > 1 && (
-                      <GcdsText><strong>{t('comment.commentLegendConfirm', { number: i + 1 })}</strong></GcdsText>
-                    )}
-                    <div dangerouslySetInnerHTML={{ __html: sub.comment }} />
-                  </div>
-                ))}
+              <div key={s.id} style={{ marginTop: '1.5rem' }}>
+                <GcdsHeading tag="h3">
+                  {section ? section[lang] : t('comment.commentLegendConfirm', { number: i + 1 })}
+                </GcdsHeading>
+                <div dangerouslySetInnerHTML={{ __html: s.comment }} />
               </div>
             )
           })}
@@ -325,7 +358,7 @@ export default function CommentPage() {
                 const next = e.target.value as SupportStatus | ''
                 setSupportStatus(next)
                 if (!isCommentEnabled(next)) {
-                  setSelectedSectionIds([])
+                  setSplitComments([])
                   setGeneralComment('')
                 }
               }}
@@ -359,30 +392,33 @@ export default function CommentPage() {
               onChange={setGeneralComment}
             />
 
-            <SectionMultiSelect
-              sections={sections}
-              selectedIds={selectedSectionIds}
-              onChange={setSelectedSectionIds}
-            />
+            {splitComments.map((sc, i) => {
+              const usedElsewhere = splitComments
+                .filter(x => x.id !== sc.id && x.sectionId)
+                .map(x => x.sectionId)
+              return (
+                <SplitCommentField
+                  key={sc.id}
+                  sections={sections}
+                  lang={lang}
+                  index={i}
+                  usedSectionIds={usedElsewhere}
+                  value={sc}
+                  onChange={updated => setSplitComments(prev => prev.map(x => x.id === sc.id ? updated : x))}
+                  onRemove={() => setSplitComments(prev => prev.filter(x => x.id !== sc.id))}
+                />
+              )
+            })}
 
-            {selectedSectionIds.length > 0 && (
-              <div>
-                {sections
-                  .filter(s => selectedSectionIds.includes(s.id))
-                  .map((section) => {
-                    const sectionComments = comments.find(c => c.sectionId === section.id)!
-                    return (
-                      <Section
-                        key={section.id}
-                        section={section}
-                        comments={sectionComments}
-                        onUpdate={updateSection}
-                        showSplitControl={!!section.allowSplit}
-                      />
-                    )
-                  })}
-              </div>
-            )}
+            <GcdsButton
+              type="button"
+              buttonRole="secondary"
+              size="small"
+              style={{ marginTop: '1rem' }}
+              onClick={() => setSplitComments(prev => [...prev, emptySplitComment()])}
+            >
+              {splitComments.length === 0 ? t('comment.splitComment') : t('comment.addComment')}
+            </GcdsButton>
           </>
         )}
 

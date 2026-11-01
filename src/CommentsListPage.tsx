@@ -83,13 +83,13 @@ export default function CommentsListPage() {
       ),
     },
     {
-      field: 'role',
-      header: t('myComments.role'),
+      field: 'position',
+      header: t('myComments.position'),
       sort: true,
     },
     {
-      field: 'position',
-      header: t('myComments.position'),
+      field: 'role',
+      header: t('myComments.role'),
       sort: true,
     },
     {

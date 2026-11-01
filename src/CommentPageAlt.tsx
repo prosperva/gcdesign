@@ -17,7 +17,7 @@ import { DOCUMENTS } from './data'
 import {
   type SubComment, type RoleKey, type SectionComments, type Draft,
   type SupportStatus,
-  SUPPORT_STATUSES, isCommentEnabled,
+  ROLE_KEYS, SUPPORT_STATUSES, isCommentEnabled,
   initComments,
   Section, StepProgress, RoleCombobox, SectionMultiSelect,
 } from './CommentShared'
@@ -303,9 +303,10 @@ export default function CommentPageAlt() {
         )}
 
         <RoleCombobox
+          roleKeys={ROLE_KEYS}
           value={role}
           error={roleError}
-          onChange={key => { setRole(key); if (key) setRoleError('') }}
+          onChange={key => { setRole(key as RoleKey | ''); if (key) setRoleError('') }}
           containerRef={roleRef}
         />
 

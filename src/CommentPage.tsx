@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, type CSSProperties } from 'react'
-import { useTranslation, Trans } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   GcdsHeading,
   GcdsText,
@@ -11,11 +11,11 @@ import {
 } from '@gcds-core/components-react'
 import { useLang } from './LangContext'
 import { useAuth } from './AuthContext'
-import { DOCUMENTS, type DocumentSection } from './data'
+import { api } from './api/client'
+import type { DocumentDto, RoleDto, SectionDto, SupportStatusDto } from './api/types'
 import {
-  type RoleKey, type Draft, type SplitComment,
-  type SupportStatus,
-  SUPPORT_STATUSES, isCommentEnabled, emptySplitComment,
+  type SplitComment,
+  emptySplitComment,
   StepProgress, RoleCombobox,
 } from './CommentShared'
 import RichTextEditor from './components/richtext/RichTextEditor'
@@ -51,13 +51,25 @@ const hintStyle: CSSProperties = {
   fontFamily: 'inherit',
 }
 
+function titleFor(item: { titleEn: string; titleFr: string }, lang: 'en' | 'fr') {
+  return lang === 'fr' ? item.titleFr : item.titleEn
+}
+
+interface StoredDraft {
+  role: string
+  supportStatus: string
+  generalComment: string
+  splitComments: SplitComment[]
+  savedAt: string
+}
+
 // ── SplitCommentField ──────────────────────────────────────────────────────
 // One additional comment block created via the "split comment" button. Each
 // block may optionally target a single section; a section already chosen in
 // another block is disabled here so it can't be picked twice.
 
 interface SplitCommentFieldProps {
-  sections: DocumentSection[]
+  sections: SectionDto[]
   lang: 'en' | 'fr'
   index: number
   usedSectionIds: string[]
@@ -87,7 +99,7 @@ function SplitCommentField({ sections, lang, index, usedSectionIds, value, onCha
           <option value="">{t('comment.splitSectionPlaceholder')}</option>
           {sections.map(s => (
             <option key={s.id} value={s.id} disabled={usedSectionIds.includes(s.id)}>
-              {s[lang]}
+              {titleFor(s, lang)}
             </option>
           ))}
         </select>
@@ -109,22 +121,54 @@ export default function CommentPage() {
   const { t } = useTranslation()
   const { lang } = useLang()
   const { user } = useAuth()
+  const navigate = useNavigate()
   const roleRef = useRef<HTMLDivElement>(null)
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const [documents, setDocuments] = useState<DocumentDto[]>([])
+  const [sections, setSections] = useState<SectionDto[]>([])
+  const [roles, setRoles] = useState<RoleDto[]>([])
+  const [supportStatuses, setSupportStatuses] = useState<SupportStatusDto[]>([])
+  const [lookupsLoading, setLookupsLoading] = useState(true)
+  const [lookupsError, setLookupsError] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    setLookupsLoading(true)
+    setLookupsError(false)
+    Promise.all([
+      api.getDocuments(),
+      api.getSections(),
+      api.getRoles(),
+      api.getSupportStatuses(),
+    ])
+      .then(([documentsData, sectionsData, rolesData, supportStatusesData]) => {
+        if (cancelled) return
+        setDocuments(documentsData)
+        setSections(sectionsData)
+        setRoles(rolesData)
+        setSupportStatuses(supportStatusesData)
+      })
+      .catch(() => { if (!cancelled) setLookupsError(true) })
+      .finally(() => { if (!cancelled) setLookupsLoading(false) })
+    return () => { cancelled = true }
+  }, [])
+
+  const roleKeys = useMemo(() => roles.map(r => r.id), [roles])
+  const splittableSections = useMemo(() => sections.filter(s => s.allowSplit), [sections])
+
   const openDocs = useMemo(
-    () => DOCUMENTS.filter(d => new Date() <= new Date(d.closingDate)),
-    [],
+    () => documents.filter(d => new Date() <= new Date(d.closingDate)),
+    [documents],
   )
 
   const [docId, setDocId] = useState<string>('')
-  const doc = DOCUMENTS.find(d => d.id === docId)
-  const sections = doc?.sections ?? []
+  const doc = documents.find(d => d.id === docId)
   const draftKey = doc ? `draft:${user.id}:${docId}:v${doc.version}` : ''
 
-  const [role, setRole] = useState<RoleKey | ''>('')
+  const [role, setRole] = useState('')
   const [roleError, setRoleError] = useState('')
-  const [supportStatus, setSupportStatus] = useState<SupportStatus | ''>('')
+  const [supportStatus, setSupportStatus] = useState('')
   const [generalComment, setGeneralComment] = useState('')
   const [splitComments, setSplitComments] = useState<SplitComment[]>([])
   const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null)
@@ -132,7 +176,8 @@ export default function CommentPage() {
   const [uploaderKey, setUploaderKey] = useState(0)
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([])
   const [confirming, setConfirming] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState(false)
 
   // Load draft whenever the selected document changes
   useEffect(() => {
@@ -142,7 +187,7 @@ export default function CommentPage() {
     setSplitComments([])
     try {
       const raw = localStorage.getItem(`draft:${user.id}:${docId}:v${doc.version}`)
-      const draft: Draft | null = raw ? JSON.parse(raw) : null
+      const draft: StoredDraft | null = raw ? JSON.parse(raw) : null
       if (draft) {
         if (draft.role) setRole(draft.role)
         if (draft.supportStatus) setSupportStatus(draft.supportStatus)
@@ -171,7 +216,7 @@ export default function CommentPage() {
     const now = new Date().toISOString()
     localStorage.setItem(draftKey, JSON.stringify({
       role, supportStatus, generalComment, splitComments, savedAt: now,
-    } satisfies Draft))
+    } satisfies StoredDraft))
     setDraftSavedAt(now)
   }
 
@@ -184,7 +229,7 @@ export default function CommentPage() {
     setDraftRestored(false)
   }
 
-  const commentEnabled = isCommentEnabled(supportStatus)
+  const commentEnabled = supportStatuses.find(s => s.id === supportStatus)?.commentsEnabled ?? false
   const hasContent =
     generalComment.replace(/<[^>]*>/g, '').trim().length > 0 ||
     splitComments.some(s => s.comment.replace(/<[^>]*>/g, '').trim()) ||
@@ -200,44 +245,47 @@ export default function CommentPage() {
       return
     }
     setRoleError('')
+    setSubmitError(false)
     setConfirming(true)
   }
 
-  function handleConfirm() {
-    if (draftKey) localStorage.removeItem(draftKey)
-    setConfirming(false)
-    setSubmitted(true)
+  async function handleConfirm() {
+    setSubmitting(true)
+    setSubmitError(false)
+    try {
+      await api.createComment({
+        role,
+        supportStatus,
+        documentId: docId,
+        version: doc?.version ?? '',
+        submittedAt: new Date().toISOString(),
+        attachments: uploadedFiles,
+        generalComment: commentEnabled ? generalComment : '',
+        sections: commentEnabled
+          ? splitComments
+              .filter(s => s.comment.trim())
+              .map(s => ({ sectionId: s.sectionId || null, comment: s.comment }))
+          : [],
+      })
+      if (draftKey) localStorage.removeItem(draftKey)
+      navigate('/comments', { state: { justSubmitted: true } })
+    } catch {
+      setSubmitError(true)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
-  function handleReset() {
-    if (draftKey) localStorage.removeItem(draftKey)
-    setDocId('')
-    setRole('')
-    setRoleError('')
-    setSupportStatus('')
-    setGeneralComment('')
-    setSplitComments([])
-    setUploadedFiles([])
-    setUploaderKey(k => k + 1)
-    setDraftSavedAt(null)
-    setDraftRestored(false)
-    setSubmitted(false)
+  if (lookupsLoading) {
+    return <GcdsText>{t('comment.loading')}</GcdsText>
   }
 
-  const requestBody = {
-    userId: user.id,
-    role,
-    supportStatus,
-    documentId: docId,
-    version: doc?.version ?? '',
-    submittedAt: new Date().toISOString(),
-    attachments: uploadedFiles,
-    generalComment: commentEnabled ? generalComment : '',
-    sections: commentEnabled
-      ? splitComments
-          .filter(s => s.comment.trim())
-          .map(s => ({ sectionId: s.sectionId || null, comment: s.comment }))
-      : [],
+  if (lookupsError) {
+    return (
+      <GcdsNotice noticeRole="danger" noticeTitleTag="h2" noticeTitle={t('comment.loadErrorTitle')}>
+        {t('comment.loadErrorBody')}
+      </GcdsNotice>
+    )
   }
 
   if (confirming) {
@@ -249,8 +297,14 @@ export default function CommentPage() {
           {t('comment.confirmNoticeBody')}
         </GcdsNotice>
 
+        {submitError && (
+          <GcdsNotice noticeRole="danger" noticeTitleTag="h2" noticeTitle={t('comment.submitErrorTitle')} style={{ marginTop: '1.5rem' }}>
+            {t('comment.submitErrorBody')}
+          </GcdsNotice>
+        )}
+
         <div style={{ marginTop: '1.5rem' }}>
-          <GcdsText><strong>{t('comment.confirmDocument')}:</strong>{' '}{doc?.[lang] ?? ''}</GcdsText>
+          <GcdsText><strong>{t('comment.confirmDocument')}:</strong>{' '}{doc ? titleFor(doc, lang) : ''}</GcdsText>
           <GcdsText><strong>{t('comment.confirmRole')}:</strong>{' '}{role ? t(`comment.roles.${role}`) : '—'}</GcdsText>
           <GcdsText><strong>{t('comment.confirmStatus')}:</strong>{' '}{supportStatus ? t(`comment.statuses.${supportStatus}`) : '—'}</GcdsText>
         </div>
@@ -269,7 +323,7 @@ export default function CommentPage() {
             return (
               <div key={s.id} style={{ marginTop: '1.5rem' }}>
                 <GcdsHeading tag="h3">
-                  {section ? section[lang] : t('comment.commentLegendConfirm', { number: i + 1 })}
+                  {section ? titleFor(section, lang) : t('comment.commentLegendConfirm', { number: i + 1 })}
                 </GcdsHeading>
                 <div dangerouslySetInnerHTML={{ __html: s.comment }} />
               </div>
@@ -277,33 +331,13 @@ export default function CommentPage() {
           })}
 
         <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-          <GcdsButton type="button" onClick={handleConfirm}>{t('comment.confirmSubmit')}</GcdsButton>
-          <GcdsButton type="button" buttonRole="secondary" onClick={() => setConfirming(false)}>{t('comment.goBack')}</GcdsButton>
+          <GcdsButton type="button" disabled={submitting} onClick={handleConfirm}>
+            {submitting ? t('comment.submitting') : t('comment.confirmSubmit')}
+          </GcdsButton>
+          <GcdsButton type="button" buttonRole="secondary" disabled={submitting} onClick={() => setConfirming(false)}>
+            {t('comment.goBack')}
+          </GcdsButton>
         </div>
-      </>
-    )
-  }
-
-  if (submitted) {
-    return (
-      <>
-        <StepProgress current={3} />
-        <GcdsHeading tag="h1">{t('comment.successTitle')}</GcdsHeading>
-        <GcdsNotice noticeRole="success" noticeTitleTag="h2" noticeTitle={t('comment.successNoticeTitle')}>
-          <Trans i18nKey="comment.successNoticeBody" values={{ title: doc?.[lang] ?? '' }}>
-            Your comments on <strong>{'{{title}}'}</strong> have been received.
-          </Trans>
-        </GcdsNotice>
-
-        <GcdsHeading tag="h2" style={{ marginTop: '2rem' }}>Request body</GcdsHeading>
-        <GcdsText>This is what will be sent to the API once the backend is connected.</GcdsText>
-        <pre style={{ background: '#f5f5f5', border: '1px solid #ccc', borderRadius: '4px', padding: '1rem', overflowX: 'auto', fontSize: '0.875rem', lineHeight: '1.5' }}>
-          {JSON.stringify(requestBody, null, 2)}
-        </pre>
-
-        <GcdsButton type="button" buttonRole="secondary" style={{ marginTop: '1.5rem' }} onClick={handleReset}>
-          {t('comment.submitAnother')}
-        </GcdsButton>
       </>
     )
   }
@@ -317,6 +351,7 @@ export default function CommentPage() {
       <div>
         {/* 1 ── Role */}
         <RoleCombobox
+          roleKeys={roleKeys}
           value={role}
           error={roleError}
           onChange={key => { setRole(key); if (key) setRoleError('') }}
@@ -338,7 +373,7 @@ export default function CommentPage() {
           >
             <option value="">{t('comment.documentPlaceholder')}</option>
             {openDocs.map(d => (
-              <option key={d.id} value={d.id}>{d[lang]}</option>
+              <option key={d.id} value={d.id}>{titleFor(d, lang)}</option>
             ))}
           </select>
         </div>
@@ -355,9 +390,9 @@ export default function CommentPage() {
               id="support-status"
               value={supportStatus}
               onChange={e => {
-                const next = e.target.value as SupportStatus | ''
+                const next = e.target.value
                 setSupportStatus(next)
-                if (!isCommentEnabled(next)) {
+                if (!supportStatuses.find(s => s.id === next)?.commentsEnabled) {
                   setSplitComments([])
                   setGeneralComment('')
                 }
@@ -365,14 +400,14 @@ export default function CommentPage() {
               style={selectStyle}
             >
               <option value="">{t('comment.statusPlaceholder')}</option>
-              {SUPPORT_STATUSES.map(s => (
-                <option key={s} value={s}>{t(`comment.statuses.${s}`)}</option>
+              {supportStatuses.map(s => (
+                <option key={s.id} value={s.id}>{t(`comment.statuses.${s.id}`)}</option>
               ))}
             </select>
           </div>
         )}
 
-        {/* 4 ── Comment area (statuses 2, 3, 4 only) */}
+        {/* 4 ── Comment area (statuses that enable comments only) */}
         {commentEnabled && (
           <>
             {draftRestored && (
@@ -399,7 +434,7 @@ export default function CommentPage() {
               return (
                 <SplitCommentField
                   key={sc.id}
-                  sections={sections}
+                  sections={splittableSections}
                   lang={lang}
                   index={i}
                   usedSectionIds={usedElsewhere}

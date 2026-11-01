@@ -2,7 +2,8 @@
   "nav": {
     "link": "Lien",
     "home": "Accueil",
-    "documents": "Consultations ouvertes"
+    "documents": "Consultations ouvertes",
+    "myComments": "Mes commentaires"
   },
   "documents": {
     "pageTitle": "Consultations ouvertes",
@@ -72,7 +73,7 @@
     "sectionsSelectPlaceholder": "Sélectionner des sections",
     "allSections": "Toutes les sections",
     "sectionsSelected": "{{count}} section sélectionnée",
-    "sectionsSelected_plural": "{{count}} sections sélectionnées",
+    "sectionsSelected_other": "{{count}} sections sélectionnées",
     "confirmStatus": "Position",
     "confirmDocument": "Document",
     "commentLabel": "Commentaire",
@@ -101,6 +102,56 @@
     "submitAnother": "Soumettre une autre réponse",
     "notFoundTitle": "Document introuvable",
     "notFoundBody": "Le document que vous recherchez n'existe pas ou a été supprimé.",
-    "notFoundBack": "Retour aux consultations"
+    "notFoundBack": "Retour aux consultations",
+    "loading": "Chargement…",
+    "loadErrorTitle": "Impossible de charger cette page",
+    "loadErrorBody": "Une erreur s'est produite lors du chargement des données nécessaires à ce formulaire. Veuillez réessayer plus tard.",
+    "submitting": "Soumission en cours…",
+    "submitErrorTitle": "Impossible de soumettre vos commentaires",
+    "submitErrorBody": "Une erreur s'est produite lors de la soumission de vos commentaires. Veuillez réessayer."
+  },
+  "myComments": {
+    "pageTitle": "Mes commentaires",
+    "intro": "Commentaires que vous avez soumis sur des consultations ouvertes.",
+    "loading": "Chargement de vos commentaires…",
+    "loadErrorTitle": "Impossible de charger vos commentaires",
+    "loadErrorBody": "Une erreur s'est produite lors du chargement de vos commentaires. Veuillez réessayer plus tard.",
+    "empty": "Vous n'avez soumis aucun commentaire pour le moment.",
+    "createNew": "Commenter un document",
+    "submittedNoticeTitle": "Commentaires soumis",
+    "submittedNoticeBody": "Vos commentaires ont été reçus.",
+    "id": "ID",
+    "document": "Document",
+    "role": "Rôle",
+    "position": "Position",
+    "submittedAt": "Soumis le",
+    "generalComment": "Commentaire",
+    "sectionCommentsHeader": "Commentaires de section",
+    "sectionComments": "{{count}} commentaire de section",
+    "sectionComments_other": "{{count}} commentaires de section",
+    "actions": "Actions",
+    "view": "Afficher"
+  },
+  "commentDetail": {
+    "pageTitle": "Détails du commentaire",
+    "back": "Retour à mes commentaires",
+    "id": "ID du commentaire",
+    "document": "Document",
+    "version": "Version",
+    "role": "Rôle",
+    "position": "Position",
+    "submittedAt": "Soumis le",
+    "generalCommentLabel": "Commentaire général",
+    "noGeneralComment": "Aucun commentaire général fourni.",
+    "sectionCommentsLabel": "Commentaires de section",
+    "noSectionComments": "Aucun commentaire propre à une section n'a été soumis.",
+    "noSpecificSection": "Aucune section précise",
+    "attachmentsLabel": "Documents à l'appui",
+    "noAttachments": "Aucun document à l'appui joint.",
+    "loading": "Chargement du commentaire…",
+    "loadErrorTitle": "Impossible de charger ce commentaire",
+    "loadErrorBody": "Une erreur s'est produite lors du chargement de ce commentaire. Veuillez réessayer plus tard.",
+    "notFoundTitle": "Commentaire introuvable",
+    "notFoundBody": "Ce commentaire n'existe pas ou ne vous appartient pas."
   }
 }

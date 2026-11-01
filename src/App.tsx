@@ -16,6 +16,8 @@ import { useLang } from './LangContext'
 import { DOCUMENTS } from './data'
 import CommentPage from './CommentPage'
 import CommentPageAlt from './CommentPageAlt'
+import CommentsListPage from './CommentsListPage'
+import CommentDetailPage from './CommentDetailPage'
 
 function Breadcrumbs() {
   const { t } = useTranslation()
@@ -51,6 +53,9 @@ function AppLayout() {
           <GcdsNavLink href="/" onClick={(e: React.MouseEvent) => { e.preventDefault(); navigate('/') }}>
             {t('nav.documents')}
           </GcdsNavLink>
+          <GcdsNavLink href="/comments" onClick={(e: React.MouseEvent) => { e.preventDefault(); navigate('/comments') }}>
+            {t('nav.myComments')}
+          </GcdsNavLink>
         </GcdsTopNav>
         <Routes>
           <Route path="/*" element={<Breadcrumbs />} />
@@ -72,6 +77,8 @@ export default function App() {
     <Routes>
       <Route element={<AppLayout />}>
         <Route path="/" element={<CommentPage />} />
+        <Route path="/comments" element={<CommentsListPage />} />
+        <Route path="/comments/:id" element={<CommentDetailPage />} />
         <Route path="/documents/:id/alt" element={<CommentPageAlt />} />
       </Route>
     </Routes>

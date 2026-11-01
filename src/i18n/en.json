@@ -2,7 +2,8 @@
   "nav": {
     "link": "Link",
     "home": "Home",
-    "documents": "Open consultations"
+    "documents": "Open consultations",
+    "myComments": "My comments"
   },
   "documents": {
     "pageTitle": "Open consultations",
@@ -72,7 +73,7 @@
     "sectionsSelectPlaceholder": "Select sections",
     "allSections": "All sections",
     "sectionsSelected": "{{count}} section selected",
-    "sectionsSelected_plural": "{{count}} sections selected",
+    "sectionsSelected_other": "{{count}} sections selected",
     "confirmStatus": "Position",
     "confirmDocument": "Document",
     "commentLabel": "Comment",
@@ -101,6 +102,56 @@
     "submitAnother": "Submit another response",
     "notFoundTitle": "Document not found",
     "notFoundBody": "The document you are looking for does not exist or has been removed.",
-    "notFoundBack": "Back to consultations"
+    "notFoundBack": "Back to consultations",
+    "loading": "Loading…",
+    "loadErrorTitle": "Couldn't load this page",
+    "loadErrorBody": "Something went wrong loading the data needed for this form. Please try again later.",
+    "submitting": "Submitting…",
+    "submitErrorTitle": "Couldn't submit your comments",
+    "submitErrorBody": "Something went wrong submitting your comments. Please try again."
+  },
+  "myComments": {
+    "pageTitle": "My comments",
+    "intro": "Comments you've submitted on open consultations.",
+    "loading": "Loading your comments…",
+    "loadErrorTitle": "Couldn't load your comments",
+    "loadErrorBody": "Something went wrong loading your comments. Please try again later.",
+    "empty": "You haven't submitted any comments yet.",
+    "createNew": "Comment on a document",
+    "submittedNoticeTitle": "Comments submitted",
+    "submittedNoticeBody": "Your comments have been received.",
+    "id": "ID",
+    "document": "Document",
+    "role": "Role",
+    "position": "Position",
+    "submittedAt": "Submitted",
+    "generalComment": "Comment",
+    "sectionCommentsHeader": "Section comments",
+    "sectionComments": "{{count}} section comment",
+    "sectionComments_other": "{{count}} section comments",
+    "actions": "Actions",
+    "view": "View"
+  },
+  "commentDetail": {
+    "pageTitle": "Comment details",
+    "back": "Back to my comments",
+    "id": "Comment ID",
+    "document": "Document",
+    "version": "Version",
+    "role": "Role",
+    "position": "Position",
+    "submittedAt": "Submitted",
+    "generalCommentLabel": "General comment",
+    "noGeneralComment": "No general comment provided.",
+    "sectionCommentsLabel": "Section comments",
+    "noSectionComments": "No section-specific comments were submitted.",
+    "noSpecificSection": "No specific section",
+    "attachmentsLabel": "Supporting documents",
+    "noAttachments": "No supporting documents attached.",
+    "loading": "Loading comment…",
+    "loadErrorTitle": "Couldn't load this comment",
+    "loadErrorBody": "Something went wrong loading this comment. Please try again later.",
+    "notFoundTitle": "Comment not found",
+    "notFoundBody": "This comment doesn't exist, or doesn't belong to you."
   }
 }

@@ -385,13 +385,14 @@ export function SectionMultiSelect({ sections, selectedIds, onChange }: SectionM
 // ── RoleCombobox ──────────────────────────────────────────────────────────────
 
 interface RoleComboboxProps {
-  value: RoleKey | ''
+  roleKeys: readonly string[]
+  value: string
   error?: string
-  onChange: (key: RoleKey | '') => void
+  onChange: (key: string) => void
   containerRef?: React.Ref<HTMLDivElement>
 }
 
-export function RoleCombobox({ value, error, onChange, containerRef }: RoleComboboxProps) {
+export function RoleCombobox({ roleKeys, value, error, onChange, containerRef }: RoleComboboxProps) {
   const { t } = useTranslation()
   const [search, setSearch] = useState(() => value ? t(`comment.roles.${value}`) : '')
   const [open, setOpen] = useState(false)
@@ -400,11 +401,11 @@ export function RoleCombobox({ value, error, onChange, containerRef }: RoleCombo
     setSearch(value ? t(`comment.roles.${value}`) : '')
   }, [value, t])
 
-  const filtered = ROLE_KEYS.filter(k =>
+  const filtered = roleKeys.filter(k =>
     !search || t(`comment.roles.${k}`).toLowerCase().includes(search.toLowerCase())
   )
 
-  function select(key: RoleKey) {
+  function select(key: string) {
     onChange(key)
     setSearch(t(`comment.roles.${key}`))
     setOpen(false)

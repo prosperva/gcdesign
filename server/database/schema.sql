@@ -15,11 +15,12 @@
 IF OBJECT_ID('dbo.Documents', 'U') IS NULL
 BEGIN
     CREATE TABLE dbo.Documents (
-        DocumentId  NVARCHAR(100)  NOT NULL CONSTRAINT PK_Documents PRIMARY KEY,
-        TitleEn     NVARCHAR(300)  NOT NULL,
-        TitleFr     NVARCHAR(300)  NOT NULL,
-        Version     NVARCHAR(20)   NOT NULL,
-        ClosingDate DATETIME2      NOT NULL
+        DocumentId   NVARCHAR(100)  NOT NULL CONSTRAINT PK_Documents PRIMARY KEY,
+        TitleEn      NVARCHAR(300)  NOT NULL,
+        TitleFr      NVARCHAR(300)  NOT NULL,
+        Version      NVARCHAR(20)   NOT NULL,
+        ClosingDate  DATETIME2      NOT NULL,
+        DocumentLink NVARCHAR(500)  NOT NULL
     );
 END;
 

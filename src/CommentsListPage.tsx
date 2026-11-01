@@ -18,6 +18,7 @@ import type { CommentListItem } from './api/types';
 interface CommentRow {
   commentId: number;
   document: string;
+  documentLink: string | null;
   role: string;
   position: string;
   submitted: number;
@@ -49,6 +50,7 @@ export default function CommentsListPage() {
   const rows: CommentRow[] = useMemo(() => comments.map(c => ({
     commentId: c.id,
     document: (lang === 'fr' ? c.documentTitleFr : c.documentTitleEn) ?? c.documentId,
+    documentLink: c.documentLink,
     role: t(`comment.roles.${c.role}`),
     position: t(`comment.statuses.${c.supportStatus}`),
     submitted: new Date(c.submittedAt).getTime(),
@@ -66,14 +68,18 @@ export default function CommentsListPage() {
       header: t('myComments.document'),
       sort: true,
       slotted: true,
-      renderCell: ({ row }) => (
+      renderCell: ({ row }) => row.documentLink ? (
         <a
-          href={`/comments/${row.commentId}`}
-          onClick={e => { e.preventDefault(); navigate(`/comments/${row.commentId}`); }}
-          style={{ fontWeight: 700, color: '#284162', textDecoration: 'none' }}
+          href={row.documentLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${row.document} (${t('myComments.opensNewTab')})`}
+          style={{ fontWeight: 700, color: '#284162' }}
         >
           {row.document}
         </a>
+      ) : (
+        <span style={{ fontWeight: 700, color: '#284162' }}>{row.document}</span>
       ),
     },
     {

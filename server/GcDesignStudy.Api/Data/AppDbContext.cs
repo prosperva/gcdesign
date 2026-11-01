@@ -98,6 +98,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(d => d.TitleEn).HasMaxLength(300).IsRequired();
             entity.Property(d => d.TitleFr).HasMaxLength(300).IsRequired();
             entity.Property(d => d.Version).HasMaxLength(20).IsRequired();
+            entity.Property(d => d.DocumentLink).HasMaxLength(500).IsRequired();
         });
 
         modelBuilder.Entity<Role>(entity =>

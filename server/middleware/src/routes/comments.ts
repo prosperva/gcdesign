@@ -25,7 +25,7 @@ commentsRouter.post('/comments', async (req, res, next) => {
 });
 
 // GET /api/comments — backs the comments list page. Joins in each comment's document
-// title so the frontend can render a readable list without a second fetch.
+// title and link so the frontend can render a readable list without a second fetch.
 commentsRouter.get('/comments', async (_req, res, next) => {
   try {
     const userId = resolveUserId();
@@ -38,6 +38,7 @@ commentsRouter.get('/comments', async (_req, res, next) => {
         ...c,
         documentTitleEn: doc?.titleEn ?? null,
         documentTitleFr: doc?.titleFr ?? null,
+        documentLink: doc?.documentLink ?? null,
       };
     });
 

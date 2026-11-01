@@ -130,7 +130,8 @@
     "sectionComments": "{{count}} section comment",
     "sectionComments_other": "{{count}} section comments",
     "actions": "Actions",
-    "view": "View"
+    "view": "View",
+    "opensNewTab": "opens in a new tab"
   },
   "commentDetail": {
     "pageTitle": "Comment details",

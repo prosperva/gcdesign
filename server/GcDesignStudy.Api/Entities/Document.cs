@@ -12,4 +12,6 @@ public class Document
     public string Version { get; set; } = default!;
 
     public DateTime ClosingDate { get; set; }
+
+    public string DocumentLink { get; set; } = default!;
 }

@@ -7,6 +7,7 @@ export interface DocumentDto {
   titleFr: string;
   version: string;
   closingDate: string;
+  documentLink: string;
 }
 
 export interface SectionDto {
@@ -50,6 +51,7 @@ export interface CommentListItem {
   documentId: string;
   documentTitleEn: string | null;
   documentTitleFr: string | null;
+  documentLink: string | null;
   role: string;
   supportStatus: string;
   generalComment: string | null;

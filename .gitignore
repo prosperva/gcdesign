@@ -16,6 +16,9 @@ dist-ssr
 server/**/bin/
 server/**/obj/
 
+# Local secrets — contains the dev DB password
+server/GcDesignStudy.Api/appsettings.Development.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

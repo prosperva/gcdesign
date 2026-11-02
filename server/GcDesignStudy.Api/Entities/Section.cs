@@ -7,7 +7,7 @@ namespace GcDesignStudy.Api.Entities;
 /// </summary>
 public class Section
 {
-    public string SectionKey { get; set; } = default!;
+    public int Id { get; set; }
 
     public string TitleEn { get; set; } = default!;
 

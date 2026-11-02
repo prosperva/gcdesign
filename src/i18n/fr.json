@@ -43,7 +43,14 @@
       "researcher": "Chercheur / Chercheuse",
       "developer": "Développeur / Ingénieur",
       "policy": "Responsable des politiques",
-      "other": "Autre"
+      "other": "Autre",
+      "1": "Gestionnaire",
+      "2": "Directeur / Directrice",
+      "3": "Architecte",
+      "4": "Analyste",
+      "5": "Chercheur / Chercheuse",
+      "6": "Développeur / Ingénieur",
+      "7": "Responsable des politiques"
     },
     "roleOtherLabel": "Veuillez décrire votre rôle",
     "roleError": "Sélectionnez votre rôle pour continuer.",
@@ -65,7 +72,12 @@
       "support-with-comments": "J'appuie, avec commentaires",
       "support-with-modifications": "J'appuie, avec modifications",
       "do-not-support": "Je n'appuie pas, avec raisons",
-      "reviewed-no-opinion": "J'ai examiné mais je n'ai pas d'opinion"
+      "reviewed-no-opinion": "J'ai examiné mais je n'ai pas d'opinion",
+      "1": "J'appuie",
+      "2": "J'appuie, avec commentaires",
+      "3": "J'appuie, avec modifications",
+      "4": "Je n'appuie pas, avec raisons",
+      "5": "J'ai examiné mais je n'ai pas d'opinion"
     },
     "generalCommentLabel": "Commentaire général",
     "sectionsSelectLabel": "Sections à commenter (facultatif)",

@@ -49,9 +49,9 @@ client.interceptors.response.use(
 // by getComments() below.
 interface RawCommentListItemDto {
   id: number;
-  documentId: string;
-  role: string;
-  supportStatus: string;
+  documentId: number;
+  role: number;
+  supportStatus: number;
   generalComment: string | null;
   submittedAt: string;
   sectionCommentCount: number;

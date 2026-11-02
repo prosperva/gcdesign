@@ -43,7 +43,14 @@
       "researcher": "Researcher",
       "developer": "Developer / Engineer",
       "policy": "Policy Officer",
-      "other": "Other"
+      "other": "Other",
+      "1": "Manager",
+      "2": "Director",
+      "3": "Architect",
+      "4": "Analyst",
+      "5": "Researcher",
+      "6": "Developer / Engineer",
+      "7": "Policy Officer"
     },
     "roleOtherLabel": "Please describe your role",
     "roleError": "Select your role to continue.",
@@ -65,7 +72,12 @@
       "support-with-comments": "I support, with comments",
       "support-with-modifications": "I support, with modifications",
       "do-not-support": "I do not support, with reasons",
-      "reviewed-no-opinion": "I have reviewed but have no opinion"
+      "reviewed-no-opinion": "I have reviewed but have no opinion",
+      "1": "I support",
+      "2": "I support, with comments",
+      "3": "I support, with modifications",
+      "4": "I do not support, with reasons",
+      "5": "I have reviewed but have no opinion"
     },
     "generalCommentLabel": "General comment",
     "sectionsSelectLabel": "Sections to comment on (optional)",

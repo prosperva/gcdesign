@@ -1,8 +1,14 @@
-// Mirrors server/middleware/src/types.ts, which mirrors the .NET DTOs. Kept in sync by
-// hand across all three — if this drifts, the .NET DTOs are authoritative.
+// Mirrors the .NET DTOs in server/GcDesignStudy.Api/Dtos — kept in sync by hand since
+// the two services aren't in the same language. If this drifts, the .NET DTOs are
+// authoritative.
+//
+// Every lookup table (Document, Section, Role, SupportStatus) is identified by a plain
+// numeric id — there's no string business key anywhere in this schema. Role/SupportStatus
+// display text comes from the frontend's own i18n files, keyed by that same numeric id as
+// a string (e.g. "comment.roles.1" — see src/i18n/en.json).
 
 export interface DocumentDto {
-  id: string;
+  id: number;
   titleEn: string;
   titleFr: string;
   version: string;
@@ -11,32 +17,32 @@ export interface DocumentDto {
 }
 
 export interface SectionDto {
-  id: string;
+  id: number;
   titleEn: string;
   titleFr: string;
   allowSplit: boolean;
 }
 
 export interface RoleDto {
-  id: string;
+  id: number;
   sortOrder: number;
 }
 
 export interface SupportStatusDto {
-  id: string;
+  id: number;
   commentsEnabled: boolean;
   sortOrder: number;
 }
 
 export interface SubCommentDto {
-  sectionId: string | null;
+  sectionId: number | null;
   comment: string;
 }
 
 export interface CommentDetailDto {
   id: number;
   userId: string;
-  documentId: string;
+  documentId: number;
   version: string;
   role: RoleDto;
   supportStatus: SupportStatusDto;
@@ -56,21 +62,21 @@ export interface PagedResult<T> {
 
 export interface CommentListItem {
   id: number;
-  documentId: string;
+  documentId: number;
   documentTitleEn: string | null;
   documentTitleFr: string | null;
   documentLink: string | null;
-  role: string;
-  supportStatus: string;
+  role: number;
+  supportStatus: number;
   generalComment: string | null;
   submittedAt: string;
   sectionCommentCount: number;
 }
 
 export interface CreateCommentRequest {
-  role: string;
-  supportStatus: string;
-  documentId: string;
+  role: number;
+  supportStatus: number;
+  documentId: number;
   version: string;
   submittedAt: string;
   attachments: string[];

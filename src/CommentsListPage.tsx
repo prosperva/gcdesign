@@ -105,7 +105,7 @@ export default function CommentsListPage() {
 
   const rows: CommentRow[] = useMemo(() => comments.map(c => ({
     commentId: c.id,
-    document: (lang === 'fr' ? c.documentTitleFr : c.documentTitleEn) ?? c.documentId,
+    document: (lang === 'fr' ? c.documentTitleFr : c.documentTitleEn) ?? String(c.documentId),
     documentLink: c.documentLink,
     role: t(`comment.roles.${c.role}`),
     position: t(`comment.statuses.${c.supportStatus}`),

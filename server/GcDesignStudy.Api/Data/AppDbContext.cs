@@ -29,10 +29,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<Comment>(entity =>
         {
             entity.Property(c => c.UserId).HasMaxLength(100).IsRequired();
-            entity.Property(c => c.DocumentId).HasMaxLength(100).IsRequired();
             entity.Property(c => c.Version).HasMaxLength(20).IsRequired();
-            entity.Property(c => c.RoleKey).HasMaxLength(50).IsRequired();
-            entity.Property(c => c.SupportStatusKey).HasMaxLength(50).IsRequired();
             entity.Property(c => c.GeneralComment).HasColumnType("nvarchar(max)");
 
             // Attachments is a short list of filenames; storing it as a JSON array
@@ -57,7 +54,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
             entity.HasOne(c => c.Role)
                 .WithMany()
-                .HasForeignKey(c => c.RoleKey)
+                .HasForeignKey(c => c.RoleId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(c => c.Document)
@@ -67,13 +64,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
             entity.HasOne(c => c.SupportStatus)
                 .WithMany()
-                .HasForeignKey(c => c.SupportStatusKey)
+                .HasForeignKey(c => c.SupportStatusId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<CommentSection>(entity =>
         {
-            entity.Property(s => s.SectionId).HasMaxLength(100);
             entity.Property(s => s.CommentText).HasColumnType("nvarchar(max)").IsRequired();
 
             entity.HasOne(s => s.Section)
@@ -85,32 +81,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         modelBuilder.Entity<Section>(entity =>
         {
-            entity.HasKey(s => s.SectionKey);
-            entity.Property(s => s.SectionKey).HasMaxLength(100);
             entity.Property(s => s.TitleEn).HasMaxLength(300).IsRequired();
             entity.Property(s => s.TitleFr).HasMaxLength(300).IsRequired();
         });
 
         modelBuilder.Entity<Document>(entity =>
         {
-            entity.HasKey(d => d.DocumentId);
-            entity.Property(d => d.DocumentId).HasMaxLength(100);
             entity.Property(d => d.TitleEn).HasMaxLength(300).IsRequired();
             entity.Property(d => d.TitleFr).HasMaxLength(300).IsRequired();
             entity.Property(d => d.Version).HasMaxLength(20).IsRequired();
             entity.Property(d => d.DocumentLink).HasMaxLength(500).IsRequired();
-        });
-
-        modelBuilder.Entity<Role>(entity =>
-        {
-            entity.HasKey(r => r.RoleKey);
-            entity.Property(r => r.RoleKey).HasMaxLength(50);
-        });
-
-        modelBuilder.Entity<SupportStatus>(entity =>
-        {
-            entity.HasKey(s => s.StatusKey);
-            entity.Property(s => s.StatusKey).HasMaxLength(50);
         });
     }
 }

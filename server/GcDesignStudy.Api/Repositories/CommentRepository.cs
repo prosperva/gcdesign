@@ -32,10 +32,10 @@ public class CommentRepository(AppDbContext db) : ICommentRepository
         {
             ("id", true) => unordered.OrderByDescending(c => c.Id),
             ("id", false) => unordered.OrderBy(c => c.Id),
-            ("role", true) => unordered.OrderByDescending(c => c.RoleKey),
-            ("role", false) => unordered.OrderBy(c => c.RoleKey),
-            ("position", true) => unordered.OrderByDescending(c => c.SupportStatusKey),
-            ("position", false) => unordered.OrderBy(c => c.SupportStatusKey),
+            ("role", true) => unordered.OrderByDescending(c => c.RoleId),
+            ("role", false) => unordered.OrderBy(c => c.RoleId),
+            ("position", true) => unordered.OrderByDescending(c => c.SupportStatusId),
+            ("position", false) => unordered.OrderBy(c => c.SupportStatusId),
             ("submitted", true) => unordered.OrderByDescending(c => c.SubmittedAt),
             ("submitted", false) => unordered.OrderBy(c => c.SubmittedAt),
             // Document title isn't sortable here — it lives on Documents, joined in by

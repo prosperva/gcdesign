@@ -12,7 +12,7 @@ public class CommentSection
 
     public Comment Comment { get; set; } = default!;
 
-    public string? SectionId { get; set; }
+    public int? SectionId { get; set; }
 
     public Section? Section { get; set; }
 

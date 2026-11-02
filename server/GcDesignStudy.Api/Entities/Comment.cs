@@ -12,17 +12,17 @@ public class Comment
 
     public string UserId { get; set; } = default!;
 
-    public string DocumentId { get; set; } = default!;
+    public int DocumentId { get; set; }
 
     public Document Document { get; set; } = default!;
 
     public string Version { get; set; } = default!;
 
-    public string RoleKey { get; set; } = default!;
+    public int RoleId { get; set; }
 
     public Role Role { get; set; } = default!;
 
-    public string SupportStatusKey { get; set; } = default!;
+    public int SupportStatusId { get; set; }
 
     public SupportStatus SupportStatus { get; set; } = default!;
 

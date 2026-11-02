@@ -4,7 +4,7 @@ namespace GcDesignStudy.Api.Dtos;
 public record CommentDetailDto(
     int Id,
     string UserId,
-    string DocumentId,
+    int DocumentId,
     string Version,
     RoleDto Role,
     SupportStatusDto SupportStatus,

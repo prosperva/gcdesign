@@ -153,7 +153,7 @@ export default function CommentPage() {
     return () => { cancelled = true }
   }, [])
 
-  const roleKeys = useMemo(() => roles.map(r => r.id), [roles])
+  const roleKeys = useMemo(() => roles.map(r => String(r.id)), [roles])
   const splittableSections = useMemo(() => sections.filter(s => s.allowSplit), [sections])
 
   const openDocs = useMemo(
@@ -162,7 +162,7 @@ export default function CommentPage() {
   )
 
   const [docId, setDocId] = useState<string>('')
-  const doc = documents.find(d => d.id === docId)
+  const doc = documents.find(d => String(d.id) === docId)
   const draftKey = doc ? `draft:${user.id}:${docId}:v${doc.version}` : ''
 
   const [role, setRole] = useState('')
@@ -228,7 +228,7 @@ export default function CommentPage() {
     setDraftRestored(false)
   }
 
-  const commentEnabled = supportStatuses.find(s => s.id === supportStatus)?.commentsEnabled ?? false
+  const commentEnabled = supportStatuses.find(s => String(s.id) === supportStatus)?.commentsEnabled ?? false
   const hasContent =
     generalComment.replace(/<[^>]*>/g, '').trim().length > 0 ||
     splitComments.some(s => s.comment.replace(/<[^>]*>/g, '').trim()) ||
@@ -253,9 +253,9 @@ export default function CommentPage() {
     setSubmitError(false)
     try {
       await api.createComment({
-        role,
-        supportStatus,
-        documentId: docId,
+        role: Number(role),
+        supportStatus: Number(supportStatus),
+        documentId: Number(docId),
         version: doc?.version ?? '',
         submittedAt: new Date().toISOString(),
         attachments: uploadedFiles,
@@ -263,7 +263,7 @@ export default function CommentPage() {
         sections: commentEnabled
           ? splitComments
               .filter(s => s.comment.trim())
-              .map(s => ({ sectionId: s.sectionId || null, comment: s.comment }))
+              .map(s => ({ sectionId: s.sectionId ? Number(s.sectionId) : null, comment: s.comment }))
           : [],
       })
       if (draftKey) localStorage.removeItem(draftKey)
@@ -318,7 +318,7 @@ export default function CommentPage() {
         {commentEnabled && splitComments
           .filter(s => s.comment.replace(/<[^>]*>/g, '').trim())
           .map((s, i) => {
-            const section = sections.find(sec => sec.id === s.sectionId)
+            const section = sections.find(sec => String(sec.id) === s.sectionId)
             return (
               <div key={s.id} style={{ marginTop: '1.5rem' }}>
                 <GcdsHeading tag="h3">
@@ -391,7 +391,7 @@ export default function CommentPage() {
               onChange={e => {
                 const next = e.target.value
                 setSupportStatus(next)
-                if (!supportStatuses.find(s => s.id === next)?.commentsEnabled) {
+                if (!supportStatuses.find(s => String(s.id) === next)?.commentsEnabled) {
                   setSplitComments([])
                   setGeneralComment('')
                 }

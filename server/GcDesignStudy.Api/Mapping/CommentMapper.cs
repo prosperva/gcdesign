@@ -7,8 +7,8 @@ namespace GcDesignStudy.Api.Mapping;
 /// <summary>
 /// Mapperly-generated mappings between entities and DTOs. Most members here match
 /// by name and are mapped automatically by the source generator; the few that don't
-/// (ids EF owns, the CommentText/Comment and RoleKey/Role renames, the computed
-/// section count) are called out explicitly below.
+/// (ids EF owns, the CommentText/Comment rename, the Role/SupportStatus flattening on
+/// the list item, the computed section count) are called out explicitly below.
 /// </summary>
 [Mapper]
 public partial class CommentMapper
@@ -19,8 +19,8 @@ public partial class CommentMapper
     [MapperIgnoreTarget(nameof(Comment.Role))]
     [MapperIgnoreTarget(nameof(Comment.Document))]
     [MapperIgnoreTarget(nameof(Comment.SupportStatus))]
-    [MapProperty(nameof(CreateCommentRequest.Role), nameof(Comment.RoleKey))]
-    [MapProperty(nameof(CreateCommentRequest.SupportStatus), nameof(Comment.SupportStatusKey))]
+    [MapProperty(nameof(CreateCommentRequest.Role), nameof(Comment.RoleId))]
+    [MapProperty(nameof(CreateCommentRequest.SupportStatus), nameof(Comment.SupportStatusId))]
     public partial Comment ToEntity(CreateCommentRequest request);
 
     [MapperIgnoreTarget(nameof(CommentSection.Id))]
@@ -42,19 +42,15 @@ public partial class CommentMapper
 
     [MapperIgnoreSource(nameof(Comment.Role))]
     [MapperIgnoreSource(nameof(Comment.SupportStatus))]
-    [MapProperty(nameof(Comment.RoleKey), nameof(CommentListItemDto.Role))]
-    [MapProperty(nameof(Comment.SupportStatusKey), nameof(CommentListItemDto.SupportStatus))]
+    [MapProperty(nameof(Comment.RoleId), nameof(CommentListItemDto.Role))]
+    [MapProperty(nameof(Comment.SupportStatusId), nameof(CommentListItemDto.SupportStatus))]
     public partial CommentListItemDto ToListItemDto(Comment entity);
 
-    [MapProperty(nameof(Section.SectionKey), nameof(SectionDto.Id))]
     public partial SectionDto ToDto(Section entity);
 
-    [MapProperty(nameof(Document.DocumentId), nameof(DocumentDto.Id))]
     public partial DocumentDto ToDto(Document entity);
 
-    [MapProperty(nameof(Role.RoleKey), nameof(RoleDto.Id))]
     public partial RoleDto ToDto(Role entity);
 
-    [MapProperty(nameof(SupportStatus.StatusKey), nameof(SupportStatusDto.Id))]
     public partial SupportStatusDto ToDto(SupportStatus entity);
 }

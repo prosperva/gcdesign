@@ -63,10 +63,10 @@ export default function CommentDetailPage() {
       })
     : '';
 
-  function sectionTitle(sectionId: string | null) {
+  function sectionTitle(sectionId: number | null) {
     if (!sectionId) return t('commentDetail.noSpecificSection');
     const section = sections.find(s => s.id === sectionId);
-    return section ? titleFor(section, lang) : sectionId;
+    return section ? titleFor(section, lang) : String(sectionId);
   }
 
   return (

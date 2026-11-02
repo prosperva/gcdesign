@@ -1,5 +1,6 @@
 using GcDesignStudy.Api.Data;
 using GcDesignStudy.Api.Mapping;
+using GcDesignStudy.Api.Repositories;
 using GcDesignStudy.Api.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,6 +19,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<CommentMapper>();
+
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
+builder.Services.AddScoped<ISectionRepository, SectionRepository>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<ISupportStatusRepository, SupportStatusRepository>();
 
 // DEV/TEST ONLY: authenticates every request via the X-User-Id header (see
 // DevHeaderAuthenticationHandler). Swap this for real auth (JWT, cookie, whatever the

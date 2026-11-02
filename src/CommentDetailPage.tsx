@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { GcdsHeading, GcdsText, GcdsButton, GcdsNotice } from '@gcds-core/components-react';
 import { useLang } from './LangContext';
-import { api, ApiError } from './api/client';
+import { api, ApiError } from './api/api';
 import type { CommentDetailDto, DocumentDto, SectionDto } from './api/types';
 
 function titleFor(item: { titleEn: string; titleFr: string }, lang: 'en' | 'fr') {

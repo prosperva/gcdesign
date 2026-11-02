@@ -11,7 +11,7 @@ import {
 } from '@gcds-core/components-react'
 import { useLang } from './LangContext'
 import { useAuth } from './AuthContext'
-import { api } from './api/client'
+import { api } from './api/api'
 import type { DocumentDto, RoleDto, SectionDto, SupportStatusDto } from './api/types'
 import {
   type SplitComment,

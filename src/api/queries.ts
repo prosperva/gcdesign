@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from './client';
+import { api } from './api';
 import type { CreateCommentRequest } from './types';
 
 // Lookup tables (documents, sections, roles, support statuses) change rarely — cache
@@ -38,10 +38,11 @@ export function useSupportStatuses() {
   });
 }
 
-export function useComments() {
+export function useComments(options: { page?: number; pageSize?: number; sortBy?: string; sortDescending?: boolean } = {}) {
+  const { page = 1, pageSize = 10, sortBy = 'submitted', sortDescending = true } = options;
   return useQuery({
-    queryKey: ['comments'],
-    queryFn: () => api.getComments(),
+    queryKey: ['comments', page, pageSize, sortBy, sortDescending],
+    queryFn: () => api.getComments({ page, pageSize, sortBy, sortDescending }),
   });
 }
 
@@ -56,7 +57,7 @@ export function useComment(id: string | undefined) {
 export function useCreateComment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: Omit<CreateCommentRequest, 'userId'>) => api.createComment(body),
+    mutationFn: (body: CreateCommentRequest) => api.createComment(body),
     onSuccess: () => {
       // The comments list (and any cached detail) is now stale — refetch on next view.
       queryClient.invalidateQueries({ queryKey: ['comments'] });

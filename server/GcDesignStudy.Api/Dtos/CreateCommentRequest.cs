@@ -1,12 +1,11 @@
 namespace GcDesignStudy.Api.Dtos;
 
 /// <summary>
-/// Body for POST /api/comments. Matches the requestBody shape CommentPage.tsx already
-/// builds on submit. UserId is accepted for shape-compatibility but the server always
-/// saves under the authenticated caller's id, never whatever is in the body.
+/// Body for POST /api/comments. No UserId here — the server always saves under the
+/// authenticated caller's id (see CommentsController.Create), so there's nothing for the
+/// client to send on that front.
 /// </summary>
 public record CreateCommentRequest(
-    string UserId,
     string Role,
     string SupportStatus,
     string DocumentId,

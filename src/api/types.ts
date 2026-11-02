@@ -46,6 +46,14 @@ export interface CommentDetailDto {
   sections: SubCommentDto[];
 }
 
+export interface PagedResult<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
 export interface CommentListItem {
   id: number;
   documentId: string;
@@ -60,7 +68,6 @@ export interface CommentListItem {
 }
 
 export interface CreateCommentRequest {
-  userId: string;
   role: string;
   supportStatus: string;
   documentId: string;

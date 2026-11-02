@@ -131,7 +131,11 @@
     "sectionComments_other": "{{count}} commentaires de section",
     "actions": "Actions",
     "view": "Afficher",
-    "opensNewTab": "s'ouvre dans un nouvel onglet"
+    "opensNewTab": "s'ouvre dans un nouvel onglet",
+    "rowsPerPage": "Lignes par page :",
+    "rangeOf": "{{from}}–{{to}} sur {{count}}",
+    "previousPage": "Page précédente",
+    "nextPage": "Page suivante"
   },
   "commentDetail": {
     "pageTitle": "Détails du commentaire",

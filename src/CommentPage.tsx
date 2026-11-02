@@ -65,20 +65,19 @@ interface StoredDraft {
 
 // ── SplitCommentField ──────────────────────────────────────────────────────
 // One additional comment block created via the "split comment" button. Each
-// block may optionally target a single section; a section already chosen in
-// another block is disabled here so it can't be picked twice.
+// block may optionally target a section — the same section can be targeted by more than
+// one block, since a user may want to make several distinct points about it.
 
 interface SplitCommentFieldProps {
   sections: SectionDto[]
   lang: 'en' | 'fr'
   index: number
-  usedSectionIds: string[]
   value: SplitComment
   onChange: (next: SplitComment) => void
   onRemove: () => void
 }
 
-function SplitCommentField({ sections, lang, index, usedSectionIds, value, onChange, onRemove }: SplitCommentFieldProps) {
+function SplitCommentField({ sections, lang, index, value, onChange, onRemove }: SplitCommentFieldProps) {
   const { t } = useTranslation()
   return (
     <GcdsFieldset
@@ -98,7 +97,7 @@ function SplitCommentField({ sections, lang, index, usedSectionIds, value, onCha
         >
           <option value="">{t('comment.splitSectionPlaceholder')}</option>
           {sections.map(s => (
-            <option key={s.id} value={s.id} disabled={usedSectionIds.includes(s.id)}>
+            <option key={s.id} value={s.id}>
               {titleFor(s, lang)}
             </option>
           ))}
@@ -428,16 +427,12 @@ export default function CommentPage() {
             />
 
             {splitComments.map((sc, i) => {
-              const usedElsewhere = splitComments
-                .filter(x => x.id !== sc.id && x.sectionId)
-                .map(x => x.sectionId)
               return (
                 <SplitCommentField
                   key={sc.id}
                   sections={splittableSections}
                   lang={lang}
                   index={i}
-                  usedSectionIds={usedElsewhere}
                   value={sc}
                   onChange={updated => setSplitComments(prev => prev.map(x => x.id === sc.id ? updated : x))}
                   onRemove={() => setSplitComments(prev => prev.filter(x => x.id !== sc.id))}

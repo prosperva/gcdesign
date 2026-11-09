@@ -33,8 +33,10 @@
     "version": "Version",
     "intro": "Partagez vos commentaires sur chaque section du PCF ci-dessous. Vous pouvez ajouter plusieurs sous-commentaires par section.",
     "roleLabel": "Votre rôle",
-    "roleHint": "Sélectionnez le rôle qui décrit le mieux votre relation avec ce PCF",
-    "rolePlaceholder": "Sélectionnez un rôle",
+    "roleHint": "Sélectionnez un ou plusieurs rôles qui décrivent le mieux votre relation avec ce PCF",
+    "rolePlaceholder": "Sélectionnez un ou plusieurs rôles",
+    "rolesSelected": "{{count}} rôle sélectionné",
+    "rolesSelected_other": "{{count}} rôles sélectionnés",
     "roles": {
       "manager": "Gestionnaire",
       "director": "Directeur / Directrice",
@@ -53,7 +55,7 @@
       "7": "Responsable des politiques"
     },
     "roleOtherLabel": "Veuillez décrire votre rôle",
-    "roleError": "Sélectionnez votre rôle pour continuer.",
+    "roleError": "Sélectionnez au moins un rôle pour continuer.",
     "roleOtherError": "Veuillez décrire votre rôle pour continuer.",
     "commentRequiredError": "Veuillez saisir au moins un commentaire avant de soumettre.",
     "uploadsLabel": "Documents à l'appui",

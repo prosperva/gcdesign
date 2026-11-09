@@ -18,9 +18,11 @@ public class Comment
 
     public string Version { get; set; } = default!;
 
-    public int RoleId { get; set; }
+    /// <summary>A comment can be submitted under more than one role (e.g. Manager + Policy Officer).</summary>
+    public List<Role> Roles { get; set; } = new();
 
-    public Role Role { get; set; } = default!;
+    /// <summary>Free text when "Other" is selected alongside/instead of a listed role.</summary>
+    public string? OtherRole { get; set; }
 
     public int SupportStatusId { get; set; }
 

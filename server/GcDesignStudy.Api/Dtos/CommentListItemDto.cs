@@ -4,7 +4,8 @@ namespace GcDesignStudy.Api.Dtos;
 public record CommentListItemDto(
     int Id,
     int DocumentId,
-    int Role,
+    List<int> Roles,
+    string? OtherRole,
     int SupportStatus,
     string? GeneralComment,
     DateTime SubmittedAt,

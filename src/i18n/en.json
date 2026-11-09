@@ -33,8 +33,10 @@
     "version": "Version",
     "intro": "Share your comments on each section of the PCF below. You can add multiple sub-comments per section.",
     "roleLabel": "Your role",
-    "roleHint": "Select the role that best describes your relationship to this PCF",
-    "rolePlaceholder": "Select a role",
+    "roleHint": "Select one or more roles that best describe your relationship to this PCF",
+    "rolePlaceholder": "Select role(s)",
+    "rolesSelected": "{{count}} role selected",
+    "rolesSelected_other": "{{count}} roles selected",
     "roles": {
       "manager": "Manager",
       "director": "Director",
@@ -53,7 +55,7 @@
       "7": "Policy Officer"
     },
     "roleOtherLabel": "Please describe your role",
-    "roleError": "Select your role to continue.",
+    "roleError": "Select at least one role to continue.",
     "roleOtherError": "Please describe your role to continue.",
     "commentRequiredError": "Please enter at least one comment before submitting.",
     "uploadsLabel": "Supporting documents",

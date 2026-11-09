@@ -6,7 +6,8 @@ namespace GcDesignStudy.Api.Dtos;
 /// client to send on that front.
 /// </summary>
 public record CreateCommentRequest(
-    int Role,
+    List<int> Roles,
+    string? OtherRole,
     int SupportStatus,
     int DocumentId,
     string Version,

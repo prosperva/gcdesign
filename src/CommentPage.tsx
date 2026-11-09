@@ -16,9 +16,10 @@ import type { DocumentDto, RoleDto, SectionDto, SupportStatusDto } from './api/t
 import {
   type SplitComment,
   emptySplitComment,
-  StepProgress, RoleCombobox,
+  StepProgress,
 } from './CommentShared'
 import RichTextEditor from './components/richtext/RichTextEditor'
+import { RoleMultiSelect, OTHER_ROLE_ID } from './components/RoleMultiSelect'
 
 // Shared inline styles for native selects and field labels
 const selectStyle: CSSProperties = {
@@ -56,7 +57,8 @@ function titleFor(item: { titleEn: string; titleFr: string }, lang: 'en' | 'fr')
 }
 
 interface StoredDraft {
-  role: string
+  roles: string[]
+  otherRole: string
   supportStatus: string
   generalComment: string
   splitComments: SplitComment[]
@@ -126,7 +128,7 @@ export default function CommentPage() {
 
   const [documents, setDocuments] = useState<DocumentDto[]>([])
   const [sections, setSections] = useState<SectionDto[]>([])
-  const [roles, setRoles] = useState<RoleDto[]>([])
+  const [availableRoles, setAvailableRoles] = useState<RoleDto[]>([])
   const [supportStatuses, setSupportStatuses] = useState<SupportStatusDto[]>([])
   const [lookupsLoading, setLookupsLoading] = useState(true)
   const [lookupsError, setLookupsError] = useState(false)
@@ -145,7 +147,7 @@ export default function CommentPage() {
         if (cancelled) return
         setDocuments(documentsData)
         setSections(sectionsData)
-        setRoles(rolesData)
+        setAvailableRoles(rolesData)
         setSupportStatuses(supportStatusesData)
       })
       .catch(() => { if (!cancelled) setLookupsError(true) })
@@ -153,7 +155,7 @@ export default function CommentPage() {
     return () => { cancelled = true }
   }, [])
 
-  const roleKeys = useMemo(() => roles.map(r => String(r.id)), [roles])
+  const roleKeys = useMemo(() => availableRoles.map(r => String(r.id)), [availableRoles])
   const splittableSections = useMemo(() => sections.filter(s => s.allowSplit), [sections])
 
   const openDocs = useMemo(
@@ -165,8 +167,10 @@ export default function CommentPage() {
   const doc = documents.find(d => String(d.id) === docId)
   const draftKey = doc ? `draft:${user.id}:${docId}:v${doc.version}` : ''
 
-  const [role, setRole] = useState('')
+  const [roles, setRoles] = useState<string[]>([])
+  const [otherRole, setOtherRole] = useState('')
   const [roleError, setRoleError] = useState('')
+  const [otherRoleError, setOtherRoleError] = useState('')
   const [supportStatus, setSupportStatus] = useState('')
   const [generalComment, setGeneralComment] = useState('')
   const [splitComments, setSplitComments] = useState<SplitComment[]>([])
@@ -188,7 +192,8 @@ export default function CommentPage() {
       const raw = localStorage.getItem(`draft:${user.id}:${docId}:v${doc.version}`)
       const draft: StoredDraft | null = raw ? JSON.parse(raw) : null
       if (draft) {
-        if (draft.role) setRole(draft.role)
+        if (draft.roles?.length) setRoles(draft.roles)
+        if (draft.otherRole) setOtherRole(draft.otherRole)
         if (draft.supportStatus) setSupportStatus(draft.supportStatus)
         setGeneralComment(draft.generalComment ?? '')
         setSplitComments(draft.splitComments ?? [])
@@ -208,13 +213,13 @@ export default function CommentPage() {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
     autoSaveTimer.current = setTimeout(saveDraft, 1500)
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current) }
-  }, [role, supportStatus, generalComment, splitComments, draftKey])
+  }, [roles, otherRole, supportStatus, generalComment, splitComments, draftKey])
 
   function saveDraft() {
     if (!draftKey) return
     const now = new Date().toISOString()
     localStorage.setItem(draftKey, JSON.stringify({
-      role, supportStatus, generalComment, splitComments, savedAt: now,
+      roles, otherRole, supportStatus, generalComment, splitComments, savedAt: now,
     } satisfies StoredDraft))
     setDraftSavedAt(now)
   }
@@ -234,16 +239,23 @@ export default function CommentPage() {
     splitComments.some(s => s.comment.replace(/<[^>]*>/g, '').trim()) ||
     uploadedFiles.length > 0
 
-  const canSubmit = !!docId && !!role && !!supportStatus && (!commentEnabled || hasContent)
+  const rolesValid = roles.length > 0 && (!roles.includes(OTHER_ROLE_ID) || otherRole.trim().length > 0)
+  const canSubmit = !!docId && rolesValid && !!supportStatus && (!commentEnabled || hasContent)
 
   function handleSubmit() {
     if (!canSubmit) return
-    if (!role) {
+    if (roles.length === 0) {
       setRoleError(t('comment.roleError'))
       setTimeout(() => roleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0)
       return
     }
+    if (roles.includes(OTHER_ROLE_ID) && !otherRole.trim()) {
+      setOtherRoleError(t('comment.roleOtherError'))
+      setTimeout(() => roleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0)
+      return
+    }
     setRoleError('')
+    setOtherRoleError('')
     setSubmitError(false)
     setConfirming(true)
   }
@@ -253,7 +265,8 @@ export default function CommentPage() {
     setSubmitError(false)
     try {
       await api.createComment({
-        role: Number(role),
+        roles: roles.filter(r => r !== OTHER_ROLE_ID).map(Number),
+        otherRole: roles.includes(OTHER_ROLE_ID) ? otherRole.trim() : null,
         supportStatus: Number(supportStatus),
         documentId: Number(docId),
         version: doc?.version ?? '',
@@ -304,7 +317,7 @@ export default function CommentPage() {
 
         <div style={{ marginTop: '1.5rem' }}>
           <GcdsText><strong>{t('comment.confirmDocument')}:</strong>{' '}{doc ? titleFor(doc, lang) : ''}</GcdsText>
-          <GcdsText><strong>{t('comment.confirmRole')}:</strong>{' '}{role ? t(`comment.roles.${role}`) : '—'}</GcdsText>
+          <GcdsText><strong>{t('comment.confirmRole')}:</strong>{' '}{roles.length > 0 ? roles.map(r => r === OTHER_ROLE_ID ? otherRole : t(`comment.roles.${r}`)).join(', ') : '—'}</GcdsText>
           <GcdsText><strong>{t('comment.confirmStatus')}:</strong>{' '}{supportStatus ? t(`comment.statuses.${supportStatus}`) : '—'}</GcdsText>
         </div>
 
@@ -349,11 +362,14 @@ export default function CommentPage() {
 
       <div>
         {/* 1 ── Role */}
-        <RoleCombobox
+        <RoleMultiSelect
           roleKeys={roleKeys}
-          value={role}
+          selectedIds={roles}
+          otherText={otherRole}
           error={roleError}
-          onChange={key => { setRole(key); if (key) setRoleError('') }}
+          otherError={otherRoleError}
+          onChange={ids => { setRoles(ids); if (ids.length > 0) setRoleError('') }}
+          onOtherTextChange={text => { setOtherRole(text); if (text.trim()) setOtherRoleError('') }}
           containerRef={roleRef}
         />
 

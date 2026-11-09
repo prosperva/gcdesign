@@ -31,6 +31,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(c => c.UserId).HasMaxLength(100).IsRequired();
             entity.Property(c => c.Version).HasMaxLength(20).IsRequired();
             entity.Property(c => c.GeneralComment).HasColumnType("nvarchar(max)");
+            entity.Property(c => c.OtherRole).HasMaxLength(200);
 
             // Attachments is a short list of filenames; storing it as a JSON array
             // column avoids a third table for something that's never queried on its own.
@@ -52,10 +53,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .HasForeignKey(s => s.CommentId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(c => c.Role)
+            entity.HasMany(c => c.Roles)
                 .WithMany()
-                .HasForeignKey(c => c.RoleId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .UsingEntity<CommentRole>(
+                    j => j.HasOne(cr => cr.Role).WithMany().HasForeignKey(cr => cr.RoleId),
+                    j => j.HasOne(cr => cr.Comment).WithMany().HasForeignKey(cr => cr.CommentId),
+                    j =>
+                    {
+                        j.HasKey(cr => new { cr.CommentId, cr.RoleId });
+                        j.ToTable("CommentRoles");
+                    });
 
             entity.HasOne(c => c.Document)
                 .WithMany()

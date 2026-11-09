@@ -66,24 +66,41 @@ BEGIN
         UserId          NVARCHAR(100)     NOT NULL,
         DocumentId      INT               NOT NULL,
         Version         NVARCHAR(20)      NOT NULL,
-        RoleId          INT               NOT NULL,
         SupportStatusId INT               NOT NULL,
+        OtherRole       NVARCHAR(200)     NULL,  -- free text when "Other" is selected alongside/instead of a listed role
         GeneralComment  NVARCHAR(MAX)     NULL,
         Attachments     NVARCHAR(MAX)     NOT NULL,  -- JSON-serialized string[]
         SubmittedAt     DATETIME2         NOT NULL,
 
         CONSTRAINT FK_Comments_Documents_DocumentId
             FOREIGN KEY (DocumentId) REFERENCES dbo.Documents (Id),
-        CONSTRAINT FK_Comments_Roles_RoleId
-            FOREIGN KEY (RoleId) REFERENCES dbo.Roles (Id),
         CONSTRAINT FK_Comments_SupportStatuses_SupportStatusId
             FOREIGN KEY (SupportStatusId) REFERENCES dbo.SupportStatuses (Id)
     );
 
     CREATE INDEX IX_Comments_UserId ON dbo.Comments (UserId);
     CREATE INDEX IX_Comments_DocumentId ON dbo.Comments (DocumentId);
-    CREATE INDEX IX_Comments_RoleId ON dbo.Comments (RoleId);
     CREATE INDEX IX_Comments_SupportStatusId ON dbo.Comments (SupportStatusId);
+END;
+
+-- ── CommentRoles ────────────────────────────────────────────────────────────
+-- A comment can be submitted under more than one role (e.g. Manager + Policy
+-- Officer) — many-to-many join table, no own Id.
+
+IF OBJECT_ID('dbo.CommentRoles', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.CommentRoles (
+        CommentId INT NOT NULL,
+        RoleId    INT NOT NULL,
+
+        CONSTRAINT PK_CommentRoles PRIMARY KEY (CommentId, RoleId),
+        CONSTRAINT FK_CommentRoles_Comments_CommentId
+            FOREIGN KEY (CommentId) REFERENCES dbo.Comments (Id) ON DELETE CASCADE,
+        CONSTRAINT FK_CommentRoles_Roles_RoleId
+            FOREIGN KEY (RoleId) REFERENCES dbo.Roles (Id)
+    );
+
+    CREATE INDEX IX_CommentRoles_RoleId ON dbo.CommentRoles (RoleId);
 END;
 
 -- ── CommentSections ─────────────────────────────────────────────────────────

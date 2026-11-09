@@ -135,7 +135,9 @@ export default function CommentDetailPage() {
                 <dt style={{ fontSize: '0.8rem', fontWeight: 700, color: '#5c5c5c', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
                   {t('commentDetail.role')}
                 </dt>
-                <dd style={{ margin: '0.25rem 0 0' }}>{t(`comment.roles.${comment.role.id}`)}</dd>
+                <dd style={{ margin: '0.25rem 0 0' }}>
+                  {[...comment.roles.map(r => t(`comment.roles.${r.id}`)), ...(comment.otherRole ? [comment.otherRole] : [])].join(', ') || '—'}
+                </dd>
               </div>
 
               <div>

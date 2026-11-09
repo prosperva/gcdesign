@@ -12,8 +12,8 @@ public class CommentRepository(AppDbContext db) : ICommentRepository
         await db.SaveChangesAsync(ct);
 
         // Only the FK keys were set by the mapper — load the navs so the caller can map
-        // a full CommentDetailDto from the result without a second round trip.
-        await db.Entry(comment).Reference(c => c.Role).LoadAsync(ct);
+        // a full CommentDetailDto from the result without a second round trip. Roles was
+        // already populated (with tracked Role entities) before AddAsync was called.
         await db.Entry(comment).Reference(c => c.SupportStatus).LoadAsync(ct);
 
         return comment;
@@ -32,15 +32,14 @@ public class CommentRepository(AppDbContext db) : ICommentRepository
         {
             ("id", true) => unordered.OrderByDescending(c => c.Id),
             ("id", false) => unordered.OrderBy(c => c.Id),
-            ("role", true) => unordered.OrderByDescending(c => c.RoleId),
-            ("role", false) => unordered.OrderBy(c => c.RoleId),
             ("position", true) => unordered.OrderByDescending(c => c.SupportStatusId),
             ("position", false) => unordered.OrderBy(c => c.SupportStatusId),
             ("submitted", true) => unordered.OrderByDescending(c => c.SubmittedAt),
             ("submitted", false) => unordered.OrderBy(c => c.SubmittedAt),
             // Document title isn't sortable here — it lives on Documents, joined in by
-            // the middleware after the fact, not part of this query. Fall back to the
-            // default newest-first order for anything unrecognized.
+            // the middleware after the fact, not part of this query. Role isn't sortable
+            // either now that a comment can have multiple roles. Fall back to the default
+            // newest-first order for anything unrecognized.
             _ => unordered.OrderByDescending(c => c.SubmittedAt),
         };
 
@@ -52,6 +51,7 @@ public class CommentRepository(AppDbContext db) : ICommentRepository
 
         var items = await query
             .Include(c => c.Sections)
+            .Include(c => c.Roles)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(ct);
@@ -62,7 +62,7 @@ public class CommentRepository(AppDbContext db) : ICommentRepository
     public async Task<Comment?> GetByIdAsync(int id, string userId, CancellationToken ct) =>
         await db.Comments
             .Include(c => c.Sections)
-            .Include(c => c.Role)
+            .Include(c => c.Roles)
             .Include(c => c.SupportStatus)
             .FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId, ct);
 }

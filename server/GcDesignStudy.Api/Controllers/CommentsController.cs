@@ -10,7 +10,7 @@ namespace GcDesignStudy.Api.Controllers;
 [ApiController]
 [Route("api/comments")]
 [Authorize]
-public class CommentsController(ICommentRepository commentRepository, CommentMapper mapper, ICurrentUserService currentUser) : ControllerBase
+public class CommentsController(ICommentRepository commentRepository, IRoleRepository roleRepository, CommentMapper mapper, ICurrentUserService currentUser) : ControllerBase
 {
     private const int DefaultPageSize = 20;
     private const int MaxPageSize = 100;
@@ -29,12 +29,15 @@ public class CommentsController(ICommentRepository commentRepository, CommentMap
         var entity = mapper.ToEntity(request);
         // Always save under the authenticated caller's id — never trust request.UserId.
         entity.UserId = userId;
+        // Roles need a DB round trip to resolve to tracked entities — the mapper can't do
+        // this on its own.
+        entity.Roles = await roleRepository.GetByIdsAsync(request.Roles, ct);
 
         var saved = await commentRepository.AddAsync(entity, ct);
         return CreatedAtAction(nameof(GetById), new { id = saved.Id }, mapper.ToDetailDto(saved));
     }
 
-    private static readonly HashSet<string> SortableFields = ["id", "role", "position", "submitted"];
+    private static readonly HashSet<string> SortableFields = ["id", "position", "submitted"];
 
     /// <summary>
     /// GET /api/comments — a sorted, paged slice of the logged-in user's own comments.

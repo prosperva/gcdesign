@@ -1,6 +1,7 @@
 using GcDesignStudy.Api.Dtos;
 using GcDesignStudy.Api.Entities;
 using Riok.Mapperly.Abstractions;
+using System.Linq;
 
 namespace GcDesignStudy.Api.Mapping;
 
@@ -15,11 +16,12 @@ public partial class CommentMapper
 {
     // ── Create: request -> entity ──────────────────────────────────────────
 
+    // Roles (int ids -> tracked Role entities) needs a DB lookup, so it's resolved and
+    // assigned in the controller after this mapping, not here.
     [MapperIgnoreTarget(nameof(Comment.Id))]
-    [MapperIgnoreTarget(nameof(Comment.Role))]
+    [MapperIgnoreTarget(nameof(Comment.Roles))]
     [MapperIgnoreTarget(nameof(Comment.Document))]
     [MapperIgnoreTarget(nameof(Comment.SupportStatus))]
-    [MapProperty(nameof(CreateCommentRequest.Role), nameof(Comment.RoleId))]
     [MapProperty(nameof(CreateCommentRequest.SupportStatus), nameof(Comment.SupportStatusId))]
     public partial Comment ToEntity(CreateCommentRequest request);
 
@@ -32,7 +34,7 @@ public partial class CommentMapper
 
     // ── Read: entity -> DTO ────────────────────────────────────────────────
 
-    // Comment.Role/SupportStatus (navs) -> CommentDetailDto.Role/SupportStatus map
+    // Comment.Roles/SupportStatus (navs) -> CommentDetailDto.Roles/SupportStatus map
     // automatically: names match, and Mapperly reuses the ToDto() methods below for
     // the nested objects.
     public partial CommentDetailDto ToDetailDto(Comment entity);
@@ -40,11 +42,11 @@ public partial class CommentMapper
     [MapProperty(nameof(CommentSection.CommentText), nameof(SubCommentDto.Comment))]
     private partial SubCommentDto ToDto(CommentSection entity);
 
-    [MapperIgnoreSource(nameof(Comment.Role))]
     [MapperIgnoreSource(nameof(Comment.SupportStatus))]
-    [MapProperty(nameof(Comment.RoleId), nameof(CommentListItemDto.Role))]
     [MapProperty(nameof(Comment.SupportStatusId), nameof(CommentListItemDto.SupportStatus))]
     public partial CommentListItemDto ToListItemDto(Comment entity);
+
+    private static List<int> MapRoleIds(List<Role> roles) => roles.Select(r => r.Id).ToList();
 
     public partial SectionDto ToDto(Section entity);
 

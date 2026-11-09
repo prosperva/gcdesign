@@ -26,10 +26,10 @@ interface CommentRow {
 
 // Maps a column's `field` (the row-data key, constrained by the naming gotcha above)
 // to the sortBy value the API actually understands. Document title isn't in here — it's
-// joined in by the middleware from a separate table, not sortable server-side.
+// joined in by the middleware from a separate table, not sortable server-side. Role isn't
+// sortable either now that a comment can have multiple roles.
 const SORT_FIELD_TO_API: Record<string, string> = {
   commentId: 'id',
-  role: 'role',
   position: 'position',
   submitted: 'submitted',
 };
@@ -168,7 +168,7 @@ export default function CommentsListPage() {
     commentId: c.id,
     document: (lang === 'fr' ? c.documentTitleFr : c.documentTitleEn) ?? String(c.documentId),
     documentLink: c.documentLink,
-    role: t(`comment.roles.${c.role}`),
+    role: [...c.roles.map(r => t(`comment.roles.${r}`)), ...(c.otherRole ? [c.otherRole] : [])].join(', '),
     position: t(`comment.statuses.${c.supportStatus}`),
     submitted: new Date(c.submittedAt).getTime(),
   })), [comments, lang, t]);
@@ -211,7 +211,10 @@ export default function CommentsListPage() {
     {
       field: 'role',
       header: t('myComments.role'),
-      sort: true,
+      // A comment can have multiple roles now, so this isn't sortable server-side (see
+      // SORT_FIELD_TO_API above) — must be explicit since GcdsTable's `sort` prop is
+      // global and a column that omits it inherits that default.
+      sort: false,
     },
     {
       field: 'submitted',

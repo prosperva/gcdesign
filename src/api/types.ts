@@ -44,7 +44,8 @@ export interface CommentDetailDto {
   userId: string;
   documentId: number;
   version: string;
-  role: RoleDto;
+  roles: RoleDto[];
+  otherRole: string | null;
   supportStatus: SupportStatusDto;
   generalComment: string | null;
   attachments: string[];
@@ -66,7 +67,8 @@ export interface CommentListItem {
   documentTitleEn: string | null;
   documentTitleFr: string | null;
   documentLink: string | null;
-  role: number;
+  roles: number[];
+  otherRole: string | null;
   supportStatus: number;
   generalComment: string | null;
   submittedAt: string;
@@ -74,7 +76,8 @@ export interface CommentListItem {
 }
 
 export interface CreateCommentRequest {
-  role: number;
+  roles: number[];
+  otherRole: string | null;
   supportStatus: number;
   documentId: number;
   version: string;

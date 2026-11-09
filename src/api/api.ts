@@ -50,7 +50,8 @@ client.interceptors.response.use(
 interface RawCommentListItemDto {
   id: number;
   documentId: number;
-  role: number;
+  roles: number[];
+  otherRole: string | null;
   supportStatus: number;
   generalComment: string | null;
   submittedAt: string;

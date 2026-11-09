@@ -124,7 +124,7 @@ export default function CommentDetailPage() {
                       color: colors.text,
                     }}
                   >
-                    {t(`comment.statuses.${comment.supportStatus.id}`)}
+                    {titleFor(comment.supportStatus, lang)}
                   </span>
                 );
               })()}
@@ -136,7 +136,7 @@ export default function CommentDetailPage() {
                   {t('commentDetail.role')}
                 </dt>
                 <dd style={{ margin: '0.25rem 0 0' }}>
-                  {[...comment.roles.map(r => t(`comment.roles.${r.id}`)), ...(comment.otherRole ? [comment.otherRole] : [])].join(', ') || '—'}
+                  {[...comment.roles.map(r => titleFor(r, lang)), ...(comment.otherRole ? [comment.otherRole] : [])].join(', ') || '—'}
                 </dd>
               </div>
 

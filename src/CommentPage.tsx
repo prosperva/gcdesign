@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, type CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   GcdsHeading,
   GcdsText,
@@ -155,7 +155,10 @@ export default function CommentPage() {
     return () => { cancelled = true }
   }, [])
 
-  const roleKeys = useMemo(() => availableRoles.map(r => String(r.id)), [availableRoles])
+  const roleOptions = useMemo(
+    () => availableRoles.map(r => ({ id: String(r.id), label: titleFor(r, lang) })),
+    [availableRoles, lang],
+  )
   const splittableSections = useMemo(() => sections.filter(s => s.allowSplit), [sections])
 
   const openDocs = useMemo(
@@ -233,7 +236,8 @@ export default function CommentPage() {
     setDraftRestored(false)
   }
 
-  const commentEnabled = supportStatuses.find(s => String(s.id) === supportStatus)?.commentsEnabled ?? false
+  const selectedStatus = supportStatuses.find(s => String(s.id) === supportStatus)
+  const commentEnabled = selectedStatus?.commentsEnabled ?? false
   const hasContent =
     generalComment.replace(/<[^>]*>/g, '').trim().length > 0 ||
     splitComments.some(s => s.comment.replace(/<[^>]*>/g, '').trim()) ||
@@ -317,8 +321,8 @@ export default function CommentPage() {
 
         <div style={{ marginTop: '1.5rem' }}>
           <GcdsText><strong>{t('comment.confirmDocument')}:</strong>{' '}{doc ? titleFor(doc, lang) : ''}</GcdsText>
-          <GcdsText><strong>{t('comment.confirmRole')}:</strong>{' '}{roles.length > 0 ? roles.map(r => r === OTHER_ROLE_ID ? otherRole : t(`comment.roles.${r}`)).join(', ') : '—'}</GcdsText>
-          <GcdsText><strong>{t('comment.confirmStatus')}:</strong>{' '}{supportStatus ? t(`comment.statuses.${supportStatus}`) : '—'}</GcdsText>
+          <GcdsText><strong>{t('comment.confirmRole')}:</strong>{' '}{roles.length > 0 ? roles.map(r => r === OTHER_ROLE_ID ? otherRole : (roleOptions.find(o => o.id === r)?.label ?? r)).join(', ') : '—'}</GcdsText>
+          <GcdsText><strong>{t('comment.confirmStatus')}:</strong>{' '}{selectedStatus ? titleFor(selectedStatus, lang) : '—'}</GcdsText>
         </div>
 
         {commentEnabled && generalComment.replace(/<[^>]*>/g, '').trim() && (
@@ -363,7 +367,7 @@ export default function CommentPage() {
       <div>
         {/* 1 ── Role */}
         <RoleMultiSelect
-          roleKeys={roleKeys}
+          roles={roleOptions}
           selectedIds={roles}
           otherText={otherRole}
           error={roleError}
@@ -416,7 +420,7 @@ export default function CommentPage() {
             >
               <option value="">{t('comment.statusPlaceholder')}</option>
               {supportStatuses.map(s => (
-                <option key={s.id} value={s.id}>{t(`comment.statuses.${s.id}`)}</option>
+                <option key={s.id} value={s.id}>{titleFor(s, lang)}</option>
               ))}
             </select>
           </div>
@@ -520,12 +524,6 @@ export default function CommentPage() {
           )}
         </div>
       </div>
-
-      {docId && (
-        <Link to={`/documents/${docId}/alt`} style={{ fontSize: '0.875rem', display: 'block', marginTop: '1.5rem' }}>
-          {t('comment.tryTabLayout')}
-        </Link>
-      )}
     </>
   )
 }

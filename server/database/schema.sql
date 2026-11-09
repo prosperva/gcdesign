@@ -42,6 +42,8 @@ IF OBJECT_ID('dbo.Roles', 'U') IS NULL
 BEGIN
     CREATE TABLE dbo.Roles (
         Id        INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Roles PRIMARY KEY,
+        TitleEn   NVARCHAR(300)     NOT NULL,
+        TitleFr   NVARCHAR(300)     NOT NULL,
         SortOrder INT               NOT NULL
     );
 END;
@@ -50,6 +52,8 @@ IF OBJECT_ID('dbo.SupportStatuses', 'U') IS NULL
 BEGIN
     CREATE TABLE dbo.SupportStatuses (
         Id              INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_SupportStatuses PRIMARY KEY,
+        TitleEn         NVARCHAR(300)     NOT NULL,
+        TitleFr         NVARCHAR(300)     NOT NULL,
         CommentsEnabled BIT               NOT NULL,
         SortOrder       INT               NOT NULL
     );

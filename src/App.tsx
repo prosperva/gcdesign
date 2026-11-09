@@ -1,6 +1,6 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Routes, Route, useParams, useNavigate, Outlet } from 'react-router-dom'
+import { Routes, Route, useNavigate, Outlet } from 'react-router-dom'
 import {
   GcdsHeader,
   GcdsFooter,
@@ -13,24 +13,17 @@ import {
   GcdsDateModified,
 } from '@gcds-core/components-react'
 import { useLang } from './LangContext'
-import { DOCUMENTS } from './data'
 import CommentPage from './CommentPage'
-import CommentPageAlt from './CommentPageAlt'
 import CommentsListPage from './CommentsListPage'
 import CommentDetailPage from './CommentDetailPage'
 
 function Breadcrumbs() {
   const { t } = useTranslation()
   const { lang } = useLang()
-  const { id } = useParams<{ id?: string }>()
-  const doc = id ? DOCUMENTS.find(d => d.id === id) : undefined
 
   return (
     <GcdsBreadcrumbs slot="breadcrumb" lang={lang}>
       <GcdsBreadcrumbsItem href="/">{t('nav.home')}</GcdsBreadcrumbsItem>
-      {doc && (
-        <GcdsBreadcrumbsItem href={`/documents/${doc.id}/alt`}>{doc[lang]}</GcdsBreadcrumbsItem>
-      )}
     </GcdsBreadcrumbs>
   )
 }
@@ -79,7 +72,6 @@ export default function App() {
         <Route path="/" element={<CommentPage />} />
         <Route path="/comments" element={<CommentsListPage />} />
         <Route path="/comments/:id" element={<CommentDetailPage />} />
-        <Route path="/documents/:id/alt" element={<CommentPageAlt />} />
       </Route>
     </Routes>
   )

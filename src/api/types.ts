@@ -3,9 +3,8 @@
 // authoritative.
 //
 // Every lookup table (Document, Section, Role, SupportStatus) is identified by a plain
-// numeric id — there's no string business key anywhere in this schema. Role/SupportStatus
-// display text comes from the frontend's own i18n files, keyed by that same numeric id as
-// a string (e.g. "comment.roles.1" — see src/i18n/en.json).
+// numeric id — there's no string business key anywhere in this schema. All four now carry
+// their own titleEn/titleFr, so display text is just titleFor(item, lang) — no i18n lookup.
 
 export interface DocumentDto {
   id: number;
@@ -25,11 +24,15 @@ export interface SectionDto {
 
 export interface RoleDto {
   id: number;
+  titleEn: string;
+  titleFr: string;
   sortOrder: number;
 }
 
 export interface SupportStatusDto {
   id: number;
+  titleEn: string;
+  titleFr: string;
   commentsEnabled: boolean;
   sortOrder: number;
 }

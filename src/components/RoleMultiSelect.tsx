@@ -6,8 +6,13 @@ import { useTranslation } from 'react-i18next'
 // otherRole instead). See CommentPage.tsx's handleConfirm.
 export const OTHER_ROLE_ID = 'other'
 
+export interface RoleOption {
+  id: string
+  label: string
+}
+
 interface RoleMultiSelectProps {
-  roleKeys: readonly string[]
+  roles: RoleOption[]
   selectedIds: string[]
   otherText: string
   error?: string
@@ -18,7 +23,7 @@ interface RoleMultiSelectProps {
 }
 
 export function RoleMultiSelect({
-  roleKeys, selectedIds, otherText, error, otherError, onChange, onOtherTextChange, containerRef,
+  roles, selectedIds, otherText, error, otherError, onChange, onOtherTextChange, containerRef,
 }: RoleMultiSelectProps) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -107,23 +112,23 @@ export function RoleMultiSelect({
               overflowY: 'auto',
             }}
           >
-            {roleKeys.map(key => (
+            {roles.map(role => (
               <label
-                key={key}
+                key={role.id}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '0.625rem',
                   padding: '0.5rem 0.75rem', borderBottom: '1px solid #e8e8e8',
                   cursor: 'pointer', fontFamily: 'inherit',
-                  background: selectedIds.includes(key) ? '#f0f4fb' : 'white',
+                  background: selectedIds.includes(role.id) ? '#f0f4fb' : 'white',
                 }}
               >
                 <input
                   type="checkbox"
-                  checked={selectedIds.includes(key)}
-                  onChange={() => toggle(key)}
+                  checked={selectedIds.includes(role.id)}
+                  onChange={() => toggle(role.id)}
                   style={{ accentColor: '#284162', width: '1rem', height: '1rem', flexShrink: 0 }}
                 />
-                {t(`comment.roles.${key}`)}
+                {role.label}
               </label>
             ))}
             <label

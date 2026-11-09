@@ -92,6 +92,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(s => s.TitleFr).HasMaxLength(300).IsRequired();
         });
 
+        modelBuilder.Entity<Role>(entity =>
+        {
+            entity.Property(r => r.TitleEn).HasMaxLength(300).IsRequired();
+            entity.Property(r => r.TitleFr).HasMaxLength(300).IsRequired();
+        });
+
+        modelBuilder.Entity<SupportStatus>(entity =>
+        {
+            entity.Property(s => s.TitleEn).HasMaxLength(300).IsRequired();
+            entity.Property(s => s.TitleFr).HasMaxLength(300).IsRequired();
+        });
+
         modelBuilder.Entity<Document>(entity =>
         {
             entity.Property(d => d.TitleEn).HasMaxLength(300).IsRequired();

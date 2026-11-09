@@ -4,7 +4,11 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { GcdsHeading, GcdsText, GcdsButton, GcdsNotice, GcdsTable, GcdsPagination, type ReactTableColumn } from '@gcds-core/components-react';
 import { useLang } from './LangContext';
 import { api } from './api/api';
-import type { CommentListItem } from './api/types';
+import type { CommentListItem, RoleDto, SupportStatusDto } from './api/types';
+
+function titleFor(item: { titleEn: string; titleFr: string }, lang: 'en' | 'fr') {
+  return lang === 'fr' ? item.titleFr : item.titleEn;
+}
 
 // NB: deliberately not named "id" — the @gcds-core/components-react GcdsTable
 // wrapper (1.7.0) computes slotted-cell names from a data row's own "id" field,
@@ -52,12 +56,22 @@ export default function CommentsListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  const [availableRoles, setAvailableRoles] = useState<RoleDto[]>([]);
+  const [supportStatuses, setSupportStatuses] = useState<SupportStatusDto[]>([]);
+
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [sortBy, setSortBy] = useState('submitted');
   const [sortDescending, setSortDescending] = useState(true);
 
   const justSubmitted = Boolean((location.state as { justSubmitted?: boolean } | null)?.justSubmitted);
+
+  useEffect(() => {
+    Promise.all([api.getRoles(), api.getSupportStatuses()]).then(([rolesData, statusesData]) => {
+      setAvailableRoles(rolesData);
+      setSupportStatuses(statusesData);
+    });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -168,10 +182,19 @@ export default function CommentsListPage() {
     commentId: c.id,
     document: (lang === 'fr' ? c.documentTitleFr : c.documentTitleEn) ?? String(c.documentId),
     documentLink: c.documentLink,
-    role: [...c.roles.map(r => t(`comment.roles.${r}`)), ...(c.otherRole ? [c.otherRole] : [])].join(', '),
-    position: t(`comment.statuses.${c.supportStatus}`),
+    role: [
+      ...c.roles.map(id => {
+        const role = availableRoles.find(r => r.id === id);
+        return role ? titleFor(role, lang) : String(id);
+      }),
+      ...(c.otherRole ? [c.otherRole] : []),
+    ].join(', '),
+    position: (() => {
+      const status = supportStatuses.find(s => s.id === c.supportStatus);
+      return status ? titleFor(status, lang) : String(c.supportStatus);
+    })(),
     submitted: new Date(c.submittedAt).getTime(),
-  })), [comments, lang, t]);
+  })), [comments, lang, availableRoles, supportStatuses]);
 
   const columns: ReactTableColumn<CommentRow>[] = useMemo(() => [
     {

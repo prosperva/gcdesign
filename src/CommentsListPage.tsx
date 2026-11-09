@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { GcdsHeading, GcdsText, GcdsButton, GcdsNotice, GcdsTable, type ReactTableColumn } from '@gcds-core/components-react';
+import { GcdsHeading, GcdsText, GcdsButton, GcdsNotice, GcdsTable, GcdsPagination, type ReactTableColumn } from '@gcds-core/components-react';
 import { useLang } from './LangContext';
 import { api } from './api/api';
 import type { CommentListItem } from './api/types';
@@ -103,6 +103,67 @@ export default function CommentsListPage() {
     return () => tableEl.removeEventListener('gcdsTableStateChange', handleStateChange);
   }, [loading, error, sortBy, sortDescending]);
 
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const rangeFrom = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
+  const rangeTo = Math.min(page * pageSize, totalCount);
+
+  // GCDS's reference table layout puts the rows-per-page control and the row-count status
+  // directly after the Sort button and directly before the table — that's GcdsTable's own
+  // native .gcds-table__row-management row. There's no prop to put real content there
+  // though: its status text is wrong here (the table only ever sees the current page's
+  // rows, not the true server-side total of 49), and its rows-per-page select only renders
+  // when `pagination` is true, which we can't use since that would make the table paginate
+  // our already-paginated 10 rows client-side instead of fetching from the server. So this
+  // injects our own control + corrected text directly into the shadow DOM to match the
+  // reference's exact element order. Re-synced on every render (no deps) since Stencil's
+  // own re-renders can reset this subtree.
+  useEffect(() => {
+    const tableEl = tableContainerRef.current?.querySelector('gcds-table');
+    const rowManagement = tableEl?.shadowRoot?.querySelector('.gcds-table__row-management') as HTMLElement | null;
+    if (!rowManagement) return;
+
+    const statusEl = rowManagement.querySelector('.gcds-table__page-info') as HTMLElement | null;
+    if (statusEl) {
+      statusEl.textContent = t('myComments.rangeOf', { from: rangeFrom, to: rangeTo, count: totalCount });
+      statusEl.style.borderInlineStart = '1px solid #d3d3d3';
+      statusEl.style.paddingInlineStart = '1rem';
+    }
+
+    let selectEl = rowManagement.querySelector('select[data-custom-page-size]') as HTMLSelectElement | null;
+    if (!selectEl) {
+      const label = document.createElement('label');
+      label.style.display = 'flex';
+      label.style.alignItems = 'center';
+      label.style.gap = '0.5rem';
+      label.appendChild(document.createTextNode(''));
+
+      selectEl = document.createElement('select');
+      selectEl.dataset.customPageSize = 'true';
+      selectEl.style.border = 'none';
+      selectEl.style.background = 'transparent';
+      selectEl.style.font = 'inherit';
+      selectEl.addEventListener('change', () => {
+        setPageSize(Number(selectEl!.value));
+        setPage(1);
+      });
+      label.appendChild(selectEl);
+
+      rowManagement.insertBefore(label, statusEl ?? rowManagement.firstChild);
+    }
+
+    const labelTextNode = selectEl.parentElement?.firstChild;
+    if (labelTextNode) labelTextNode.textContent = t('myComments.rowsPerPage');
+
+    selectEl.innerHTML = '';
+    PAGE_SIZE_OPTIONS.forEach(size => {
+      const opt = document.createElement('option');
+      opt.value = String(size);
+      opt.textContent = String(size);
+      selectEl!.appendChild(opt);
+    });
+    selectEl.value = String(pageSize);
+  });
+
   const rows: CommentRow[] = useMemo(() => comments.map(c => ({
     commentId: c.id,
     document: (lang === 'fr' ? c.documentTitleFr : c.documentTitleEn) ?? String(c.documentId),
@@ -122,6 +183,11 @@ export default function CommentsListPage() {
     {
       field: 'document',
       header: t('myComments.document'),
+      // GcdsTable's `sort` prop is global ("enable sorting, overridable per column") — a
+      // column that omits `sort` inherits that global default rather than staying
+      // unsortable, so this must be explicit. Document title isn't sortable server-side
+      // (see SORT_FIELD_TO_API above).
+      sort: false,
       slotted: true,
       renderCell: ({ row }) => row.documentLink ? (
         <a
@@ -160,6 +226,7 @@ export default function CommentsListPage() {
       field: 'actions',
       header: t('myComments.actions'),
       alignment: 'center',
+      sort: false,
       slotted: true,
       renderCell: ({ row }) => (
         <GcdsButton
@@ -173,10 +240,6 @@ export default function CommentsListPage() {
       ),
     },
   ], [t, lang, navigate]);
-
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  const rangeFrom = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
-  const rangeTo = Math.min(page * pageSize, totalCount);
 
   return (
     <>
@@ -213,6 +276,11 @@ export default function CommentsListPage() {
               typed CommentRow columns/rows need a cast to satisfy the prop types. This is
               a vendor typing gap, not a real shape mismatch: at runtime these are exactly
               the CommentRow objects the renderCell callbacks above expect. */}
+          {/* The rows-per-page control and row-count status are injected directly into
+              GcdsTable's own native .gcds-table__row-management row (see the effect above)
+              to match the GC Design System reference's exact element order — Sort button,
+              then this row, then the table — rather than duplicating them as a separate
+              element here. */}
           <GcdsTable
             columns={columns as unknown as ReactTableColumn[]}
             data={rows as unknown as Record<string, unknown>[]}
@@ -221,68 +289,23 @@ export default function CommentsListPage() {
             captionSlot={t('myComments.pageTitle')}
           />
 
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              gap: '1.5rem',
-              padding: '0.75rem 1rem',
-              border: '1px solid #e0e0e0',
-              borderTop: 'none',
-              color: '#5c5c5c',
-              fontSize: '0.875rem',
-              flexWrap: 'wrap',
-            }}
-          >
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              {t('myComments.rowsPerPage')}
-              <select
-                value={pageSize}
-                onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
-                style={{ border: 'none', background: 'transparent', fontSize: '0.875rem' }}
-              >
-                {PAGE_SIZE_OPTIONS.map(size => <option key={size} value={size}>{size}</option>)}
-              </select>
-            </label>
-
-            <span>{t('myComments.rangeOf', { from: rangeFrom, to: rangeTo, count: totalCount })}</span>
-
-            <span style={{ display: 'flex', gap: '0.25rem' }}>
-              <button
-                type="button"
-                aria-label={t('myComments.previousPage')}
-                disabled={page <= 1}
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                style={{
-                  border: 'none',
-                  background: 'transparent',
-                  cursor: page <= 1 ? 'default' : 'pointer',
-                  color: page <= 1 ? '#b0b0b0' : '#284162',
-                  fontSize: '1rem',
-                  padding: '0.25rem 0.5rem',
+          {totalPages > 1 && (
+            <div style={{ padding: '0.75rem 1rem' }}>
+              <GcdsPagination
+                display="list"
+                currentPage={page}
+                totalPages={totalPages}
+                label={t('myComments.paginationLabel')}
+                lang={lang}
+                onGcdsClick={(e: CustomEvent<string | object>) => {
+                  const detail = e.detail
+                  if (typeof detail === 'object' && detail !== null && 'page' in detail) {
+                    setPage((detail as { page: number }).page)
+                  }
                 }}
-              >
-                ‹
-              </button>
-              <button
-                type="button"
-                aria-label={t('myComments.nextPage')}
-                disabled={page >= totalPages}
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                style={{
-                  border: 'none',
-                  background: 'transparent',
-                  cursor: page >= totalPages ? 'default' : 'pointer',
-                  color: page >= totalPages ? '#b0b0b0' : '#284162',
-                  fontSize: '1rem',
-                  padding: '0.25rem 0.5rem',
-                }}
-              >
-                ›
-              </button>
-            </span>
-          </div>
+              />
+            </div>
+          )}
         </div>
       )}
     </>

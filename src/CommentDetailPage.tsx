@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { GcdsHeading, GcdsText, GcdsButton, GcdsNotice } from '@gcds-core/components-react';
 import { useLang } from './LangContext';
-import { api, ApiError } from './api/api';
-import type { CommentDetailDto, DocumentDto, SectionDto } from './api/types';
+import { ApiError } from './api/api';
+import { useComment, useDocuments, useSections } from './api/queries';
 
 function titleFor(item: { titleEn: string; titleFr: string }, lang: 'en' | 'fr') {
   return lang === 'fr' ? item.titleFr : item.titleEn;
@@ -24,37 +23,12 @@ export default function CommentDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
 
-  const [comment, setComment] = useState<CommentDetailDto | null>(null);
-  const [documents, setDocuments] = useState<DocumentDto[]>([]);
-  const [sections, setSections] = useState<SectionDto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [notFound, setNotFound] = useState(false);
+  const { data: comment, isLoading: loading, isError: commentIsError, error: commentError } = useComment(id);
+  const { data: documents = [], isError: documentsIsError } = useDocuments();
+  const { data: sections = [], isError: sectionsIsError } = useSections();
 
-  useEffect(() => {
-    if (!id) return;
-    let cancelled = false;
-    setLoading(true);
-    setError(false);
-    setNotFound(false);
-    Promise.all([api.getComment(id), api.getDocuments(), api.getSections()])
-      .then(([commentData, documentsData, sectionsData]) => {
-        if (cancelled) return;
-        setComment(commentData);
-        setDocuments(documentsData);
-        setSections(sectionsData);
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        if (err instanceof ApiError && err.status === 404) {
-          setNotFound(true);
-        } else {
-          setError(true);
-        }
-      })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [id]);
+  const notFound = commentIsError && commentError instanceof ApiError && commentError.status === 404;
+  const error = (commentIsError && !notFound) || documentsIsError || sectionsIsError;
 
   const document = comment ? documents.find(d => d.id === comment.documentId) : undefined;
   const submittedAt = comment

@@ -3,8 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { GcdsHeading, GcdsText, GcdsButton, GcdsNotice, GcdsTable, GcdsPagination, type ReactTableColumn } from '@gcds-core/components-react';
 import { useLang } from './LangContext';
-import { api } from './api/api';
-import type { CommentListItem, RoleDto, SupportStatusDto } from './api/types';
+import { useComments, useRoles, useSupportStatuses } from './api/queries';
 
 function titleFor(item: { titleEn: string; titleFr: string }, lang: 'en' | 'fr') {
   return lang === 'fr' ? item.titleFr : item.titleEn;
@@ -51,14 +50,6 @@ export default function CommentsListPage() {
   const location = useLocation();
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
-  const [comments, setComments] = useState<CommentListItem[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  const [availableRoles, setAvailableRoles] = useState<RoleDto[]>([]);
-  const [supportStatuses, setSupportStatuses] = useState<SupportStatusDto[]>([]);
-
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [sortBy, setSortBy] = useState('submitted');
@@ -66,27 +57,11 @@ export default function CommentsListPage() {
 
   const justSubmitted = Boolean((location.state as { justSubmitted?: boolean } | null)?.justSubmitted);
 
-  useEffect(() => {
-    Promise.all([api.getRoles(), api.getSupportStatuses()]).then(([rolesData, statusesData]) => {
-      setAvailableRoles(rolesData);
-      setSupportStatuses(statusesData);
-    });
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(false);
-    api.getComments({ page, pageSize, sortBy, sortDescending })
-      .then(data => {
-        if (cancelled) return;
-        setComments(data.items);
-        setTotalCount(data.totalCount);
-      })
-      .catch(() => { if (!cancelled) setError(true); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [page, pageSize, sortBy, sortDescending]);
+  const { data: availableRoles = [] } = useRoles();
+  const { data: supportStatuses = [] } = useSupportStatuses();
+  const { data: commentsData, isLoading: loading, isError: error } = useComments({ page, pageSize, sortBy, sortDescending });
+  const comments = commentsData?.items ?? [];
+  const totalCount = commentsData?.totalCount ?? 0;
 
   // The React wrapper's prop types only cover standard DOM events, not the table's own
   // gcdsTableStateChange — so this listens on the real custom element directly instead

@@ -11,8 +11,8 @@ import {
 } from '@gcds-core/components-react'
 import { useLang } from './LangContext'
 import { useAuth } from './AuthContext'
-import { api } from './api/api'
-import type { DocumentDto, RoleDto, SectionDto, SupportStatusDto } from './api/types'
+import { useDocuments, useSections, useRoles, useSupportStatuses, useCreateComment } from './api/queries'
+import type { SectionDto } from './api/types'
 import {
   type SplitComment,
   emptySplitComment,
@@ -126,34 +126,15 @@ export default function CommentPage() {
   const roleRef = useRef<HTMLDivElement>(null)
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const [documents, setDocuments] = useState<DocumentDto[]>([])
-  const [sections, setSections] = useState<SectionDto[]>([])
-  const [availableRoles, setAvailableRoles] = useState<RoleDto[]>([])
-  const [supportStatuses, setSupportStatuses] = useState<SupportStatusDto[]>([])
-  const [lookupsLoading, setLookupsLoading] = useState(true)
-  const [lookupsError, setLookupsError] = useState(false)
+  const { data: documents = [], isLoading: documentsLoading, isError: documentsError } = useDocuments()
+  const { data: sections = [], isLoading: sectionsLoading, isError: sectionsError } = useSections()
+  const { data: availableRoles = [], isLoading: rolesLoading, isError: rolesError } = useRoles()
+  const { data: supportStatuses = [], isLoading: statusesLoading, isError: statusesError } = useSupportStatuses()
 
-  useEffect(() => {
-    let cancelled = false
-    setLookupsLoading(true)
-    setLookupsError(false)
-    Promise.all([
-      api.getDocuments(),
-      api.getSections(),
-      api.getRoles(),
-      api.getSupportStatuses(),
-    ])
-      .then(([documentsData, sectionsData, rolesData, supportStatusesData]) => {
-        if (cancelled) return
-        setDocuments(documentsData)
-        setSections(sectionsData)
-        setAvailableRoles(rolesData)
-        setSupportStatuses(supportStatusesData)
-      })
-      .catch(() => { if (!cancelled) setLookupsError(true) })
-      .finally(() => { if (!cancelled) setLookupsLoading(false) })
-    return () => { cancelled = true }
-  }, [])
+  const lookupsLoading = documentsLoading || sectionsLoading || rolesLoading || statusesLoading
+  const lookupsError = documentsError || sectionsError || rolesError || statusesError
+
+  const createComment = useCreateComment()
 
   const roleOptions = useMemo(
     () => availableRoles.map(r => ({ id: String(r.id), label: titleFor(r, lang) })),
@@ -182,7 +163,6 @@ export default function CommentPage() {
   const [uploaderKey, setUploaderKey] = useState(0)
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([])
   const [confirming, setConfirming] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(false)
 
   // Load draft whenever the selected document changes
@@ -265,10 +245,9 @@ export default function CommentPage() {
   }
 
   async function handleConfirm() {
-    setSubmitting(true)
     setSubmitError(false)
     try {
-      await api.createComment({
+      await createComment.mutateAsync({
         roles: roles.filter(r => r !== OTHER_ROLE_ID).map(Number),
         otherRole: roles.includes(OTHER_ROLE_ID) ? otherRole.trim() : null,
         supportStatus: Number(supportStatus),
@@ -287,8 +266,6 @@ export default function CommentPage() {
       navigate('/comments', { state: { justSubmitted: true } })
     } catch {
       setSubmitError(true)
-    } finally {
-      setSubmitting(false)
     }
   }
 
@@ -347,10 +324,10 @@ export default function CommentPage() {
           })}
 
         <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-          <GcdsButton type="button" disabled={submitting} onClick={handleConfirm}>
-            {submitting ? t('comment.submitting') : t('comment.confirmSubmit')}
+          <GcdsButton type="button" disabled={createComment.isPending} onClick={handleConfirm}>
+            {createComment.isPending ? t('comment.submitting') : t('comment.confirmSubmit')}
           </GcdsButton>
-          <GcdsButton type="button" buttonRole="secondary" disabled={submitting} onClick={() => setConfirming(false)}>
+          <GcdsButton type="button" buttonRole="secondary" disabled={createComment.isPending} onClick={() => setConfirming(false)}>
             {t('comment.goBack')}
           </GcdsButton>
         </div>
